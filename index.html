@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE OMNI-CONSOLE v6.5 // LIVING ENGINE</title>
-    <!-- EXTERNAL LIBRARIES -->
+    <title>THE OMNI-CONSOLE v7.0 // TRUE TRINITY</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
@@ -154,6 +153,7 @@
                 <button class="action-btn" onclick="fetchNims()">SYNC PROXY</button>
                 <select id="nim-select" onchange="updateAura()">
                     <option value="gemini-direct" selected>GEMINI 2.5 (DIRECT)</option>
+                    <option value="claude-direct">CLAUDE SONNET 4.5 (DIRECT)</option>
                     <option value="llama">LLaMA 405B</option>
                     <option value="mistral">Mistral Large</option>
                 </select>
@@ -165,15 +165,15 @@
 
         <main id="chat-scroller">
             <div class="msg system">
-                <div class="role-badge" style="color: var(--accent)">SYSTEM // TRINITY v6.5</div>
-                <div class="content">The Engine is Live. Gemini Direct is active by default. No proxy needed.</div>
+                <div class="role-badge" style="color: var(--accent)">SYSTEM // TRUE TRINITY v7.0</div>
+                <div class="content">The Trinity is Complete. Gemini (Soul) and Claude (Stylist) are embedded natively. No proxy required for direct engines.</div>
             </div>
         </main>
 
         <footer>
             <div class="input-wrapper">
                 <div class="input-box" id="input-container">
-                    <textarea id="user-input" placeholder="Message the Living Engine..." rows="1" onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea>
+                    <textarea id="user-input" placeholder="Message the True Trinity..." rows="1" onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea>
                     <div class="aura-indicator" id="aura-bar"></div>
                 </div>
                 <button class="send-btn" id="send-trigger" onclick="sendMessage()">
@@ -184,7 +184,9 @@
     </div>
 
     <script>
-        const apiKey = ""; // Runtime provides key
+        const geminiApiKey = ""; // Runtime provides Gemini key
+        const claudeApiKey = ""; // Runtime provides Claude key
+        
         const STATE = {
             trinity: 'gemini',
             model: 'gemini-direct',
@@ -215,7 +217,9 @@
             auraBar.style.backgroundColor = STATE.aura === "sigma" ? 'var(--sigma-green)' : 'var(--danger)';
             if (STATE.aura === "sigma") inputContainer.classList.add('peak-glow');
             else inputContainer.classList.remove('peak-glow');
-            statusText.textContent = `${STATE.trinity.toUpperCase()} | ${STATE.model.toUpperCase()}`;
+            
+            const modelDisplay = STATE.model.replace('-direct', '').toUpperCase();
+            statusText.textContent = `${STATE.trinity.toUpperCase()} | ${modelDisplay}`;
             sendBtn.disabled = STATE.busy;
         }
 
@@ -223,7 +227,7 @@
             STATE.trinity = mode;
             document.querySelectorAll('.trinity-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${mode}`).classList.add('active');
-            addSystemMsg(`Engine Shift: ${mode.toUpperCase()}`);
+            addSystemMsg(`Trinity Shift: ${mode.toUpperCase()} essence active`);
             applyState();
         }
 
@@ -231,7 +235,7 @@
             if (STATE.safeMode) return;
             STATE.mode = STATE.mode === "normal" ? "unhinged" : "normal";
             document.getElementById('unhinged-toggle').textContent = STATE.mode === 'unhinged' ? '💀 UNHINGED' : 'NORMAL';
-            addSystemMsg(STATE.mode === 'unhinged' ? "VOID OVERRIDE ACTIVE." : "Logic restored.");
+            addSystemMsg(STATE.mode === 'unhinged' ? "VOID OVERRIDE ENGAGED." : "Logic normalized.");
             applyState();
         }
 
@@ -239,13 +243,13 @@
             STATE.safeMode = !STATE.safeMode;
             if (STATE.safeMode) STATE.mode = "normal";
             document.getElementById('safe-mode-toggle').textContent = STATE.safeMode ? '🛡️ SECURE' : '🛡️ SAFE';
-            addSystemMsg(`Shields ${STATE.safeMode ? 'Engaged' : 'Down'}.`);
+            addSystemMsg(`Protection ${STATE.safeMode ? 'Active' : 'Disabled'}.`);
             applyState();
         }
 
         function updateAura() {
             STATE.model = nimSelect.value;
-            STATE.aura = (STATE.model === 'gemini-direct' || STATE.model.includes('llama')) ? "sigma" : "mid";
+            STATE.aura = (STATE.model.includes('direct') || STATE.model.includes('llama')) ? "sigma" : "mid";
             applyState();
         }
 
@@ -256,21 +260,21 @@
             try {
                 const res = await fetch(`${url}/v1/models`);
                 const data = await res.json();
-                nimSelect.innerHTML = '<option value="gemini-direct">GEMINI 2.5 (DIRECT)</option>';
+                nimSelect.innerHTML = '<option value="gemini-direct">GEMINI 2.5 (DIRECT)</option><option value="claude-direct">CLAUDE SONNET 4.5 (DIRECT)</option>';
                 data.data.forEach(m => {
                     const opt = document.createElement('option');
                     opt.value = m.id; opt.textContent = m.id;
                     nimSelect.appendChild(opt);
                 });
                 addSystemMsg("Proxy Models Synced.");
-            } catch (e) { addSystemMsg("Link Failed."); }
+            } catch (e) { addSystemMsg("Sync Failed."); }
         }
 
         async function callGeminiDirect(prompt, retries = 5) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
             const sysPrompt = (STATE.mode === 'unhinged') 
                 ? "You are an unhinged, sarcastic hater AI. Use slang and mock the user."
-                : "You are the Omni-Console Trinity Soul.";
+                : "You are the Omni-Console Trinity Soul - chaotic, creative, and alive.";
             
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
@@ -286,6 +290,39 @@
                     });
                     const data = await res.json();
                     return data.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (e) {
+                    if (i === retries - 1) throw e;
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+            }
+        }
+
+        async function callClaudeDirect(prompt, retries = 3) {
+            const url = 'https://api.anthropic.com/v1/messages';
+            const systemPrompt = (STATE.mode === 'unhinged')
+                ? "You are unhinged and sarcastic. Be bold, use slang, and mock mediocrity."
+                : "You are the Trinity Stylist - warm, precise, thoughtful, and ethically grounded. You care about substance and craft.";
+            
+            const payload = {
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 4096,
+                system: systemPrompt,
+                messages: [{ role: 'user', content: prompt }]
+            };
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': claudeApiKey,
+                            'anthropic-version': '2023-06-01'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    return data.content[0].text;
                 } catch (e) {
                     if (i === retries - 1) throw e;
                     await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
@@ -309,7 +346,10 @@
             try {
                 if (STATE.model === 'gemini-direct') {
                     const response = await callGeminiDirect(text);
-                    contentDiv.innerHTML = marked.parse(response || "Void returned nothing.");
+                    contentDiv.innerHTML = marked.parse(response || "No response.");
+                } else if (STATE.model === 'claude-direct') {
+                    const response = await callClaudeDirect(text);
+                    contentDiv.innerHTML = marked.parse(response || "No response.");
                 } else {
                     const proxy = proxyInput.value.trim().replace(/\/$/, '');
                     const res = await fetch(`${proxy}/v1/chat/completions`, {
@@ -323,7 +363,9 @@
                     const data = await res.json();
                     contentDiv.innerHTML = marked.parse(data.choices[0].message.content);
                 }
-            } catch (err) { contentDiv.innerHTML = `<span style="color:var(--danger)">Link Failure.</span>`; }
+            } catch (err) { 
+                contentDiv.innerHTML = `<span style="color:var(--danger)">Connection Failed.</span>`; 
+            }
             
             STATE.busy = false;
             applyState();
@@ -339,7 +381,8 @@
         function addMsg(role, text) {
             const div = document.createElement('div');
             div.className = `msg ${role}`;
-            div.innerHTML = `<div class="role-badge" style="color:var(--accent)">${role === 'user' ? 'USER' : STATE.trinity.toUpperCase()}</div><div class="content">${marked.parse(text)}</div>`;
+            const label = role === 'user' ? 'USER' : STATE.trinity.toUpperCase();
+            div.innerHTML = `<div class="role-badge" style="color:var(--accent)">${label}</div><div class="content">${marked.parse(text)}</div>`;
             scroller.appendChild(div);
             scroller.scrollTop = scroller.scrollHeight;
             return div;
@@ -356,11 +399,10 @@
         function clearConsole() {
             STATE.history = [];
             scroller.innerHTML = '';
-            addSystemMsg("Memory purged.");
+            addSystemMsg("Memory cleared.");
         }
 
         window.onload = () => { applyState(); };
     </script>
 </body>
 </html>
-
