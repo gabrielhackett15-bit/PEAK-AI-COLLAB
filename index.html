@@ -3,137 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Omni-Bridge | Centurion v13.8.5</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>THE OMNI-CONSOLE v7.9 // CLASSIC</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow: hidden; }
-        .min-h-dvh { min-height: 100dvh; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        const THEMES = {
-            GPT: { color: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-            GEMINI: { color: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/20' },
-            CLAUDE: { color: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/20' }
-        };
-
-        function App() {
-            const [mode, setMode] = useState('GPT');
-            const [url, setUrl] = useState('');
-            const [models, setModels] = useState([]);
-            const [selected, setSelected] = useState('');
-            const [messages, setMessages] = useState([]);
-            const [input, setInput] = useState('');
-            const [loading, setLoading] = useState(false);
-            const scrollRef = useRef(null);
-
-            const theme = THEMES[mode];
-
-            useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
-
-            const sync = async () => {
-                if (!url) return;
-                setLoading(true);
-                try {
-                    // Normalize URL: remove trailing slash
-                    const cleanUrl = url.replace(/\/+$/, "");
-                    const res = await fetch(`${cleanUrl}/v1/models`);
-                    const text = await res.text();
-                    
-                    try {
-                        const data = JSON.parse(text);
-                        setModels(data.data || []);
-                        if (data.data?.length) setSelected(data.data[0].id);
-                    } catch (parseErr) {
-                        console.error("Raw response:", text);
-                        throw new Error("Worker returned non-JSON. Check your Worker URL.");
-                    }
-                } catch (err) {
-                    setMessages(prev => [...prev, { role: 'assistant', content: `SYNC ERROR: ${err.message}` }]);
-                } finally { setLoading(false); }
-            };
-
-            const send = async () => {
-                if (!input.trim() || !url) return;
-                const newMsgs = [...messages, { role: 'user', content: input }];
-                setMessages(newMsgs);
-                setInput('');
-                
-                try {
-                    const cleanUrl = url.replace(/\/+$/, "");
-                    const res = await fetch(`${cleanUrl}/v1/chat/completions`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ model: selected, messages: newMsgs })
-                    });
-                    const data = await res.json();
-                    setMessages(prev => [...prev, { role: 'assistant', content: data.choices?.[0]?.message?.content || data.error }]);
-                } catch (err) {
-                    setMessages(prev => [...prev, { role: 'assistant', content: `REQUEST ERROR: ${err.message}` }]);
-                }
-            };
-
-            return (
-                <div className="min-h-dvh flex flex-col transition-colors duration-500">
-                    <header className={`p-4 border-b ${theme.border} flex justify-between items-center bg-slate-900/50 backdrop-blur-md`}>
-                        <div className="flex items-center gap-2">
-                            <div className={`w-2.5 h-2.5 rounded-full ${theme.color} animate-pulse`} />
-                            <h1 className="font-black italic tracking-tighter text-lg uppercase">OMNI-BRIDGE</h1>
-                        </div>
-                        <div className="flex gap-1">
-                            {['GPT', 'GEMINI', 'CLAUDE'].map(t => (
-                                <button key={t} onClick={() => setMode(t)} className={`px-3 py-1 rounded text-[10px] font-bold ${mode === t ? theme.color : 'bg-slate-800 text-slate-500'}`}>{t}</button>
-                            ))}
-                        </div>
-                    </header>
-
-                    <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-48 no-scrollbar">
-                        {messages.length === 0 && (
-                            <div className="h-64 flex flex-col items-center justify-center opacity-20 text-center">
-                                <div className={`w-12 h-12 border-2 ${theme.border} rounded-full mb-4`} />
-                                <p className="text-xs font-bold tracking-[0.4em]">CENTURION STANDBY</p>
-                            </div>
-                        )}
-                        {messages.map((m, i) => (
-                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[90%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-slate-800' : `bg-slate-900 border ${theme.border}`}`}>
-                                    {m.content}
-                                </div>
-                            </div>
-                        ))}
-                        <div ref={scrollRef} />
-                    </main>
-
-                    <footer className={`fixed bottom-0 left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-xl border-t ${theme.border} space-y-3`}>
-                        <div className="flex gap-2">
-                            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Worker URL..." className="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-[10px] outline-none font-mono" />
-                            <button onClick={sync} className="bg-slate-800 px-3 py-1.5 rounded text-[10px] font-bold uppercase">{loading ? '...' : 'Sync'}</button>
-                        </div>
-                        <select value={selected} onChange={e => setSelected(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-[10px] font-bold outline-none">
-                            {models.length ? models.map(m => <option key={m.id} value={m.id}>{m.id}</option>) : <option>No Models</option>}
-                        </select>
-                        <div className="flex gap-2">
-                            <textarea value={input} onChange={e => setInput(e.target.value)} placeholder="Command..." className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm h-12 resize-none outline-none focus:border-slate-600" onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), send())} />
-                            <button onClick={send} className={`p-3 rounded-xl ${theme.color} text-white shadow-lg`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
-                        </div>
-                    </footer>
-                </div>
-            );
+        :root {
+            --bg: #020617;
+            --panel: #0f172a;
+            --border: #1e293b;
+            --text: #f1f5f9;
+            --accent: #8b5cf6;
+            --gpt-color: #10b981;
+            --claude-color: #d97706;
+            --gemini-color: #8b5cf6;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        body.mode-gpt { --accent: var(--gpt-color); --bg: #0a0a0a; }
+        body.mode-claude { --accent: var(--claude-color); --bg: #0f0d0b; }
+        body.mode-gemini { --accent: var(--gemini-color); --bg: #020617; }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background-color: var(--bg); color: var(--text);
+            font-family: var(--font-main); overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .app-container { display: flex; flex-direction: column; height: 100dvh; }
+
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 15px;
+            display: flex; flex-direction: column; gap: 10px;
+            z-index: 100;
+        }
+
+        .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+        .trinity-switcher {
+            display: flex; background: #1e293b; padding: 3px; border-radius: 8px; gap: 2px;
+        }
+        .trinity-btn {
+            padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 800;
+            cursor: pointer; opacity: 0.5; transition: var(--transition); border: none; color: white;
+            text-transform: uppercase;
+        }
+        .trinity-btn.active { opacity: 1; background: var(--accent); color: var(--bg); }
+
+        .controls { 
+            display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .controls::-webkit-scrollbar { display: none; }
+        
+        input, select, button.action-btn {
+            background: #1e293b; color: white; border: 1px solid var(--border);
+            padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono);
+            font-size: 11px; outline: none; transition: var(--transition);
+        }
+
+        #chat-scroller {
+            flex: 1; overflow-y: auto; padding: 15px;
+            display: flex; flex-direction: column; gap: 20px;
+            scroll-behavior: smooth;
+        }
+        .msg { max-width: 850px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .role-badge {
+            font-family: var(--font-mono); font-size: 10px; font-weight: 800;
+            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; color: var(--accent);
+        }
+        .role-badge::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        .content { font-size: 15px; line-height: 1.6; color: #cbd5e1; word-wrap: break-word; }
+        .content pre { background: #0f172a; padding: 14px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); font-size: 13px; margin: 12px 0; }
+
+        footer { padding: 12px; background: rgba(15, 23, 42, 0.85); border-top: 1px solid var(--border); }
+        .input-wrapper {
+            max-width: 850px; margin: 0 auto; display: flex; align-items: flex-end; gap: 12px;
+        }
+        .input-box {
+            flex: 1; background: #1e293b;
+            border-radius: 14px; padding: 10px 14px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        textarea {
+            width: 100%; background: transparent; border: none; color: white;
+            font-family: inherit; font-size: 16px; outline: none; resize: none; min-height: 24px;
+            max-height: 160px;
+        }
+
+        .send-btn {
+            width: 46px; height: 46px; background: var(--accent); color: var(--bg);
+            border: none; border-radius: 12px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: var(--transition); flex-shrink: 0;
+        }
+
+        @media (min-width: 768px) {
+            header { flex-direction: row; align-items: center; padding: 12px 30px; }
+            footer { padding: 25px; }
+        }
+    </style>
+</head>
+<body class="mode-gemini">
+
+    <div class="app-container">
+        <header>
+            <div class="header-top">
+                <div class="trinity-switcher">
+                    <button class="trinity-btn" id="btn-gpt" onclick="setTrinity('gpt')">GPT</button>
+                    <button class="trinity-btn" id="btn-gpt5" onclick="setTrinity('gpt5')">GPT-5</button>
+                    <button class="trinity-btn active" id="btn-gemini" onclick="setTrinity('gemini')">GEMINI</button>
+                    <button class="trinity-btn" id="btn-claude" onclick="setTrinity('claude')">CLAUDE</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <select id="model-select">
+                    <option value="">(Sync Required)</option>
+                </select>
+                <button class="action-btn" onclick="syncModels()" id="sync-btn" style="background: var(--accent); color: var(--bg); font-weight: 800;">SYNC</button>
+                <input type="password" id="api-key" placeholder="API Key..." style="width: 100px;">
+                <input type="text" id="api-url" placeholder="Proxy URL (v1)" style="width: 200px;">
+                <button class="action-btn" onclick="clearConsole()">PURGE</button>
+            </div>
+        </header>
+
+        <main id="chat-scroller">
+            <div class="msg system">
+                <div class="role-badge">SYSTEM // v7.9 RESTORED</div>
+                <div class="content">The Classic UI is back. The Engine is Centurion v14.0. Sync to load the Omega Roster.</div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="input-wrapper">
+                <div class="input-box">
+                    <textarea id="user-input" placeholder="Message the Trinity..." rows="1" onkeydown="handleKey(event)" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+                </div>
+                <button class="send-btn" onclick="sendMessage()">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const STATE = { trinity: 'gemini', busy: false };
+
+        const MEMORY = JSON.parse(localStorage.getItem('omni_memory')) || {
+            gpt: { key: '', url: '', models: [] },
+            gpt5: { key: '', url: '', models: ['gpt-5-mini'] },
+            gemini: { key: '', url: '', models: [] },
+            claude: { key: '', url: '', models: [] }
+        };
+
+        window.onload = () => {
+            const lastMode = localStorage.getItem('omni_last_mode') || 'gemini';
+            setTrinity(lastMode);
+        };
+
+        function setTrinity(mode) {
+            if (STATE.trinity) saveToMemory();
+
+            STATE.trinity = mode;
+            localStorage.setItem('omni_last_mode', mode);
+            
+            document.querySelectorAll('.trinity-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+            document.body.className = `mode-${mode}`;
+
+            const data = MEMORY[mode];
+            document.getElementById('api-key').value = data.key || '';
+            document.getElementById('api-url').value = data.url || '';
+            populateDropdown(data.models);
+        }
+
+        function saveToMemory() {
+            const mode = STATE.trinity;
+            MEMORY[mode].key = document.getElementById('api-key').value;
+            MEMORY[mode].url = document.getElementById('api-url').value;
+            localStorage.setItem('omni_memory', JSON.stringify(MEMORY));
+        }
+
+        function populateDropdown(modelList) {
+            const select = document.getElementById('model-select');
+            const currentVal = select.value || localStorage.getItem(`omni_model_${STATE.trinity}`);
+            select.innerHTML = '';
+            
+            if (!modelList || modelList.length === 0) {
+                select.innerHTML = '<option value="">(Sync Required)</option>';
+                return;
+            }
+
+            modelList.forEach(id => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = id;
+                select.appendChild(opt);
+            });
+
+            if (currentVal && modelList.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
+        async function syncModels() {
+            const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
+            const key = document.getElementById('api-key').value.trim();
+            const btn = document.getElementById('sync-btn');
+            
+            if (!url || !key) {
+                addMsg('system', '⚠ Configuration Required: URL and Key needed.');
+                return;
+            }
+
+            btn.innerText = "FETCHING...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${url}/models`, {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                const data = await res.json();
+                
+                let modelIds = [];
+                if (Array.isArray(data)) {
+                    modelIds = data.map(m => m.id || m);
+                } else if (data.data && Array.isArray(data.data)) {
+                    modelIds = data.data.map(m => m.id || m);
+                }
+
+                if (modelIds.length > 0) {
+                    MEMORY[STATE.trinity].models = modelIds;
+                    saveToMemory();
+                    populateDropdown(modelIds);
+                    addMsg('system', `📡 ${STATE.trinity.toUpperCase()} Sync: ${modelIds.length} models found.`);
+                } else {
+                    throw new Error("Empty model list.");
+                }
+            } catch (err) {
+                addMsg('system', `❌ Sync Error: ${err.message}.`);
+            } finally {
+                btn.innerText = "SYNC";
+                btn.disabled = false;
+            }
+        }
+
+        async function sendMessage() {
+            saveToMemory();
+            const text = document.getElementById('user-input').value.trim();
+            const key = document.getElementById('api-key').value.trim();
+            const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
+            const model = document.getElementById('model-select').value;
+
+            if (!text || STATE.busy) return;
+            if (!key || !url || !model) {
+                addMsg('system', '⚠ Bridge Error: Missing Config.');
+                return;
+            }
+
+            localStorage.setItem(`omni_model_${STATE.trinity}`, model);
+
+            STATE.busy = true;
+            document.getElementById('user-input').value = '';
+            document.getElementById('user-input').style.height = 'auto';
+            addMsg('user', text);
+            const botMsg = addMsg('bot', 'Awaiting Bridge...');
+            const contentDiv = botMsg.querySelector('.content');
+
+            try {
+                const res = await fetch(`${url}/chat/completions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({ model: model, messages: [{role: 'user', content: text}] })
+                });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
+                contentDiv.innerHTML = marked.parse(data.choices[0].message.content);
+            } catch (err) { 
+                contentDiv.innerHTML = `❌ Proxy Error: ${err.message}`;
+            }
+            STATE.busy = false;
+        }
+
+        function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+        function addMsg(role, text) {
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            div.innerHTML = `<div class="role-badge">${role.toUpperCase()}</div><div class="content">${marked.parse(text)}</div>`;
+            const scroller = document.getElementById('chat-scroller');
+            scroller.appendChild(div);
+            scroller.scrollTop = scroller.scrollHeight;
+            return div;
+        }
+        function clearConsole() { document.getElementById('chat-scroller').innerHTML = ''; }
     </script>
 </body>
 </html>
+
 
