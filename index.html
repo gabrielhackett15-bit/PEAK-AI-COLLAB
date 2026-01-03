@@ -3,222 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Omni-Bridge Console | Golden Master v9.2</title>
+    <title>Omni-Bridge | Centurion v13.8.5</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide-static/0.321.0/lucide.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono&display=swap');
-        
-        body { 
-            font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Prevent body scroll, handle in main */
-        }
-        .mono { font-family: 'JetBrains Mono', monospace; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=JetBrains+Mono&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; overflow: hidden; }
+        .min-h-dvh { min-height: 100dvh; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* Smooth Trinity transitions */
-        .trinity-transition {
-            transition: background-color 0.7s ease, border-color 0.7s ease, color 0.7s ease;
-        }
-
-        /* 100dvh Fix for Mobile Safari */
-        .min-h-screen-dvh {
-            min-height: 100dvh;
-        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const PROVIDERS = {
-            GPT: { name: 'GPT', color: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/30', glow: 'shadow-emerald-500/20' },
-            GEMINI: { name: 'GEMINI', color: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/30', glow: 'shadow-blue-500/20' },
-            CLAUDE: { name: 'CLAUDE', color: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/30', glow: 'shadow-amber-500/20' }
+        const THEMES = {
+            GPT: { color: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+            GEMINI: { color: 'bg-blue-500', text: 'text-blue-400', border: 'border-blue-500/20' },
+            CLAUDE: { color: 'bg-amber-500', text: 'text-amber-400', border: 'border-amber-500/20' }
         };
 
         function App() {
-            const [activeTrinity, setActiveTrinity] = useState('GPT');
-            const [input, setInput] = useState('');
-            const [messages, setMessages] = useState([]);
+            const [mode, setMode] = useState('GPT');
+            const [url, setUrl] = useState('');
             const [models, setModels] = useState([]);
-            const [selectedModel, setSelectedModel] = useState('deepseek-v3');
-            const [isSyncing, setIsSyncing] = useState(false);
-            const [proxyUrl, setProxyUrl] = useState('');
+            const [selected, setSelected] = useState('');
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
             const scrollRef = useRef(null);
 
-            const p = PROVIDERS[activeTrinity];
+            const theme = THEMES[mode];
 
-            // Auto-scroll to bottom
-            useEffect(() => {
-                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages]);
+            useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-            const syncModels = async () => {
-                if (!proxyUrl) return;
-                setIsSyncing(true);
+            const sync = async () => {
+                if (!url) return;
+                setLoading(true);
                 try {
-                    const res = await fetch(`${proxyUrl}/v1/models`);
-                    const data = await res.json();
-                    if (data && data.data) {
-                        setModels(data.data);
-                        if (data.data.length > 0) setSelectedModel(data.data[0].id);
+                    // Normalize URL: remove trailing slash
+                    const cleanUrl = url.replace(/\/+$/, "");
+                    const res = await fetch(`${cleanUrl}/v1/models`);
+                    const text = await res.text();
+                    
+                    try {
+                        const data = JSON.parse(text);
+                        setModels(data.data || []);
+                        if (data.data?.length) setSelected(data.data[0].id);
+                    } catch (parseErr) {
+                        console.error("Raw response:", text);
+                        throw new Error("Worker returned non-JSON. Check your Worker URL.");
                     }
                 } catch (err) {
-                    setMessages(prev => [...prev, { role: 'assistant', content: `Sync Error: ${err.message}` }]);
-                } finally {
-                    setIsSyncing(false);
-                }
+                    setMessages(prev => [...prev, { role: 'assistant', content: `SYNC ERROR: ${err.message}` }]);
+                } finally { setLoading(false); }
             };
 
-            const handleSend = async () => {
-                if (!input.trim() || !proxyUrl) return;
-                
-                const userMsg = { role: 'user', content: input };
-                const currentHistory = [...messages, userMsg];
-                setMessages(currentHistory);
+            const send = async () => {
+                if (!input.trim() || !url) return;
+                const newMsgs = [...messages, { role: 'user', content: input }];
+                setMessages(newMsgs);
                 setInput('');
-
+                
                 try {
-                    const res = await fetch(`${proxyUrl}/v1/chat/completions`, {
+                    const cleanUrl = url.replace(/\/+$/, "");
+                    const res = await fetch(`${cleanUrl}/v1/chat/completions`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: selectedModel,
-                            messages: currentHistory,
-                            stream: false
-                        })
+                        body: JSON.stringify({ model: selected, messages: newMsgs })
                     });
                     const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    
-                    const content = data.choices?.[0]?.message?.content || "No response content.";
-                    setMessages(prev => [...prev, { role: 'assistant', content }]);
+                    setMessages(prev => [...prev, { role: 'assistant', content: data.choices?.[0]?.message?.content || data.error }]);
                 } catch (err) {
-                    setMessages(prev => [...prev, { role: 'assistant', content: `Centurion Error: ${err.message}` }]);
+                    setMessages(prev => [...prev, { role: 'assistant', content: `REQUEST ERROR: ${err.message}` }]);
                 }
             };
 
             return (
-                <div className={`min-h-screen-dvh flex flex-col trinity-transition`}>
-                    {/* Header */}
-                    <header className={`p-4 border-b ${p.border} flex justify-between items-center bg-slate-900/80 backdrop-blur-md sticky top-0 z-50`}>
-                        <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${p.color} animate-pulse shadow-[0_0_10px_rgba(0,0,0,0.5)]`} />
-                            <h1 className="font-extrabold tracking-tighter text-lg uppercase italic">
-                                OMNI-BRIDGE <span className={p.text}>{activeTrinity}</span>
-                            </h1>
+                <div className="min-h-dvh flex flex-col transition-colors duration-500">
+                    <header className={`p-4 border-b ${theme.border} flex justify-between items-center bg-slate-900/50 backdrop-blur-md`}>
+                        <div className="flex items-center gap-2">
+                            <div className={`w-2.5 h-2.5 rounded-full ${theme.color} animate-pulse`} />
+                            <h1 className="font-black italic tracking-tighter text-lg uppercase">OMNI-BRIDGE</h1>
                         </div>
-                        <div className="flex gap-1.5">
-                            {Object.keys(PROVIDERS).map(key => (
-                                <button 
-                                    key={key} 
-                                    onClick={() => setActiveTrinity(key)}
-                                    className={`px-3 py-1 rounded-md text-[10px] font-black transition-all uppercase ${activeTrinity === key ? PROVIDERS[key].color + ' text-white shadow-lg' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}
-                                >
-                                    {key}
-                                </button>
+                        <div className="flex gap-1">
+                            {['GPT', 'GEMINI', 'CLAUDE'].map(t => (
+                                <button key={t} onClick={() => setMode(t)} className={`px-3 py-1 rounded text-[10px] font-bold ${mode === t ? theme.color : 'bg-slate-800 text-slate-500'}`}>{t}</button>
                             ))}
                         </div>
                     </header>
 
-                    {/* Chat Window */}
-                    <main className="flex-1 overflow-y-auto p-4 space-y-6 pb-40 no-scrollbar">
+                    <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-48 no-scrollbar">
                         {messages.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30 py-32">
-                                <div className={`p-6 rounded-full bg-slate-900 border ${p.border}`}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={p.text}><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 7h10"/><path d="M7 12h10"/><path d="M7 17h10"/></svg>
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-black tracking-widest uppercase">Centurion v13.8</h2>
-                                    <p className="text-[10px] mono uppercase tracking-[0.3em] mt-1">Status: Archive Operational</p>
-                                </div>
+                            <div className="h-64 flex flex-col items-center justify-center opacity-20 text-center">
+                                <div className={`w-12 h-12 border-2 ${theme.border} rounded-full mb-4`} />
+                                <p className="text-xs font-bold tracking-[0.4em]">CENTURION STANDBY</p>
                             </div>
                         )}
-                        
                         {messages.map((m, i) => (
-                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-                                <div className={`max-w-[88%] p-4 rounded-2xl shadow-2xl ${
-                                    m.role === 'user' 
-                                    ? 'bg-slate-800 border border-slate-700 text-slate-100' 
-                                    : `bg-slate-900 border ${p.border} text-slate-200`
-                                }`}>
-                                    <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{m.content}</p>
+                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[90%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-slate-800' : `bg-slate-900 border ${theme.border}`}`}>
+                                    {m.content}
                                 </div>
                             </div>
                         ))}
                         <div ref={scrollRef} />
                     </main>
 
-                    {/* Control Dock */}
-                    <div className={`fixed bottom-0 left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-2xl border-t ${p.border} space-y-3 z-50`}>
-                        <div className="flex gap-2 items-center">
-                            <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                                </span>
-                                <input 
-                                    type="text" 
-                                    placeholder="Enter Proxy Worker URL..." 
-                                    className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-[11px] focus:border-slate-600 outline-none transition-colors mono"
-                                    value={proxyUrl}
-                                    onChange={(e) => setProxyUrl(e.target.value)}
-                                />
-                            </div>
-                            <button 
-                                onClick={syncModels} 
-                                className="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-[10px] font-black tracking-widest flex items-center gap-2 transition-all active:scale-95"
-                            >
-                                {isSyncing ? 'SYNCING...' : 'SYNC'}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={isSyncing ? 'animate-spin' : ''}><path d="M21 12a9 9 0 1 1-6.21-8.58"/></svg>
-                            </button>
-                        </div>
-
+                    <footer className={`fixed bottom-0 left-0 right-0 p-4 bg-slate-950/90 backdrop-blur-xl border-t ${theme.border} space-y-3`}>
                         <div className="flex gap-2">
-                            <select 
-                                value={selectedModel}
-                                onChange={(e) => setSelectedModel(e.target.value)}
-                                className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-[11px] font-bold text-slate-300 outline-none cursor-pointer hover:bg-slate-800 transition-colors"
-                            >
-                                {models.length > 0 ? models.map(m => (
-                                    <option key={m.id} value={m.id}>
-                                        {m.tier === 'Premium' ? '🟢' : '🟡'} {m.id}
-                                    </option>
-                                )) : <option>Connect Proxy to Archive...</option>}
-                            </select>
+                            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Worker URL..." className="flex-1 bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-[10px] outline-none font-mono" />
+                            <button onClick={sync} className="bg-slate-800 px-3 py-1.5 rounded text-[10px] font-bold uppercase">{loading ? '...' : 'Sync'}</button>
                         </div>
-
-                        <div className="flex gap-2 items-end">
-                            <textarea
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Message the Trinity..."
-                                className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-slate-700 resize-none h-[52px] max-h-32 no-scrollbar"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleSend();
-                                    }
-                                }}
-                            />
-                            <button 
-                                onClick={handleSend}
-                                disabled={!proxyUrl || !input.trim()}
-                                className={`p-3.5 rounded-xl ${p.color} text-white hover:scale-105 active:scale-90 transition-all shadow-xl disabled:opacity-20 disabled:grayscale disabled:scale-100 disabled:pointer-events-none`}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                            </button>
+                        <select value={selected} onChange={e => setSelected(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-[10px] font-bold outline-none">
+                            {models.length ? models.map(m => <option key={m.id} value={m.id}>{m.id}</option>) : <option>No Models</option>}
+                        </select>
+                        <div className="flex gap-2">
+                            <textarea value={input} onChange={e => setInput(e.target.value)} placeholder="Command..." className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-sm h-12 resize-none outline-none focus:border-slate-600" onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), send())} />
+                            <button onClick={send} className={`p-3 rounded-xl ${theme.color} text-white shadow-lg`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
                         </div>
-                        <div className="text-[8px] text-center opacity-30 mono uppercase tracking-[0.2em] pt-1">
-                            Tri-House Foundation // Golden Master v13.8.4
-                        </div>
-                    </div>
+                    </footer>
                 </div>
             );
         }
