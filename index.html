@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE OMNI-CONSOLE v7.5 // PROFESSIONAL</title>
+    <title>THE OMNI-CONSOLE v7.5.1 // FIXER</title>
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -129,21 +129,21 @@
 
             <div class="controls">
                 <select id="model-select">
-                    <option value="llama3-70b-8192">LLaMA 3 70B (Groq)</option>
-                    <option value="llama3-8b-8192">LLaMA 3 8B (Groq)</option>
-                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                    <option value="">(No models synced)</option>
+                    <option value="llama3-70b-8192">LLaMA 3 70B (Default)</option>
+                    <option value="gpt-4o">GPT-4o (Default)</option>
                 </select>
-                <button class="action-btn" onclick="syncModels()" style="background: var(--accent); color: var(--bg); font-weight: 800;">SYNC</button>
+                <button class="action-btn" onclick="syncModels()" id="sync-btn" style="background: var(--accent); color: var(--bg); font-weight: 800;">SYNC</button>
                 <input type="password" id="api-key" placeholder="API Key..." style="width: 100px;">
-                <input type="text" id="api-url" placeholder="Proxy URL (OpenAI-compatible)" style="width: 200px;">
+                <input type="text" id="api-url" placeholder="Proxy URL (v1 path included)" style="width: 200px;">
                 <button class="action-btn" onclick="clearConsole()">PURGE</button>
             </div>
         </header>
 
         <main id="chat-scroller">
             <div class="msg system">
-                <div class="role-badge">SYSTEM // v7.5 FINAL</div>
-                <div class="content">Consolidated Public Edition. Professional architecture active. Sync your models and communicate through the Bridge.</div>
+                <div class="role-badge">SYSTEM // v7.5.1 FIXER</div>
+                <div class="content">Auto-Discovery Engine active. If SYNC fails, ensure your Proxy URL includes the <code>/v1</code> suffix (e.g., <code>https://api.groq.com/openai/v1</code>).</div>
             </div>
         </main>
 
@@ -162,15 +162,12 @@
     <script>
         const STATE = { trinity: 'gemini', busy: false };
 
-        // Persistent Session Logic
         window.onload = () => {
             document.getElementById('api-key').value = localStorage.getItem('omni_key') || '';
             document.getElementById('api-url').value = localStorage.getItem('omni_url') || '';
-            const savedModel = localStorage.getItem('omni_model');
-            if (savedModel) {
-                const select = document.getElementById('model-select');
-                const exists = Array.from(select.options).some(opt => opt.value === savedModel);
-                if (exists) select.value = savedModel;
+            const savedModels = localStorage.getItem('omni_models_list');
+            if (savedModels) {
+                populateDropdown(JSON.parse(savedModels));
             }
         };
 
@@ -181,31 +178,62 @@
             document.body.className = `mode-${mode}`;
         }
 
+        function populateDropdown(modelList) {
+            const select = document.getElementById('model-select');
+            const currentVal = select.value || localStorage.getItem('omni_model');
+            select.innerHTML = '';
+            
+            modelList.forEach(id => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = id;
+                select.appendChild(opt);
+            });
+
+            if (currentVal && modelList.includes(currentVal)) {
+                select.value = currentVal;
+            }
+        }
+
         async function syncModels() {
             const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
             const key = document.getElementById('api-key').value.trim();
+            const btn = document.getElementById('sync-btn');
+            
             if (!url || !key) {
-                addMsg('system', '⚠ Configuration Required: URL and Key needed for sync.');
+                addMsg('system', '⚠ Sync Failure: URL and Key required.');
                 return;
             }
+
+            btn.innerText = "FETCHING...";
+            btn.disabled = true;
 
             try {
                 const res = await fetch(`${url}/models`, {
                     headers: { 'Authorization': `Bearer ${key}` }
                 });
                 const data = await res.json();
-                const select = document.getElementById('model-select');
-                select.innerHTML = '';
                 
-                data.data.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.id;
-                    opt.textContent = m.id;
-                    select.appendChild(opt);
-                });
-                addMsg('system', `📡 Proxy Synchronized: ${data.data.length} models available.`);
+                // Flexible parsing: handles {data: [...]} or just [...]
+                let modelIds = [];
+                if (Array.isArray(data)) {
+                    modelIds = data.map(m => m.id || m);
+                } else if (data.data && Array.isArray(data.data)) {
+                    modelIds = data.data.map(m => m.id || m);
+                }
+
+                if (modelIds.length > 0) {
+                    populateDropdown(modelIds);
+                    localStorage.setItem('omni_models_list', JSON.stringify(modelIds));
+                    addMsg('system', `📡 Discovery Success: ${modelIds.length} models synced.`);
+                } else {
+                    throw new Error("No models found in response.");
+                }
             } catch (err) {
-                addMsg('system', '❌ Sync Failed: Check Proxy URL/CORS settings.');
+                addMsg('system', `❌ Sync Failed: ${err.message}. Try adding /v1 to your URL.`);
+            } finally {
+                btn.innerText = "SYNC";
+                btn.disabled = false;
             }
         }
 
@@ -216,8 +244,8 @@
             const model = document.getElementById('model-select').value;
 
             if (!text || STATE.busy) return;
-            if (!key || !url) {
-                addMsg('system', '⚠ Bridge Error: Key and URL required.');
+            if (!key || !url || !model) {
+                addMsg('system', '⚠ Config Error: Ensure Key, URL, and Model are selected.');
                 return;
             }
 
@@ -239,9 +267,10 @@
                     body: JSON.stringify({ model: model, messages: [{role: 'user', content: text}] })
                 });
                 const data = await res.json();
+                if (data.error) throw new Error(data.error.message);
                 contentDiv.innerHTML = marked.parse(data.choices[0].message.content);
             } catch (err) { 
-                contentDiv.innerHTML = "❌ Connection Fault: Ensure the API provider is active.";
+                contentDiv.innerHTML = `❌ Connection Fault: ${err.message}`;
             }
             STATE.busy = false;
         }
@@ -251,8 +280,9 @@
             const div = document.createElement('div');
             div.className = `msg ${role}`;
             div.innerHTML = `<div class="role-badge">${role.toUpperCase()}</div><div class="content">${marked.parse(text)}</div>`;
-            document.getElementById('chat-scroller').appendChild(div);
-            document.getElementById('chat-scroller').scrollTop = document.getElementById('chat-scroller').scrollHeight;
+            const scroller = document.getElementById('chat-scroller');
+            scroller.appendChild(div);
+            scroller.scrollTop = scroller.scrollHeight;
             return div;
         }
         function clearConsole() { document.getElementById('chat-scroller').innerHTML = ''; }
