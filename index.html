@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE OMNI-CONSOLE v7.2-R // RESTORED</title>
+    <title>THE OMNI-CONSOLE v7.5 // PROFESSIONAL</title>
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- DESIGN TOKENS (RESTORED) --- */
         :root {
             --bg: #020617;
             --panel: #0f172a;
@@ -19,17 +18,14 @@
             --gpt-color: #10b981;
             --claude-color: #d97706;
             --gemini-color: #8b5cf6;
-            --danger: #ef4444;
-            --sigma-green: #22c55e;
             --font-main: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --send-radius: 12px;
         }
 
-        body.mode-gpt { --accent: var(--gpt-color); --bg: #0a0a0a; --send-radius: 4px; }
-        body.mode-claude { --accent: var(--claude-color); --bg: #0f0d0b; --send-radius: 50%; }
-        body.mode-gemini { --accent: var(--gemini-color); --bg: #020617; --send-radius: 12px; }
+        body.mode-gpt { --accent: var(--gpt-color); --bg: #0a0a0a; }
+        body.mode-claude { --accent: var(--claude-color); --bg: #0f0d0b; }
+        body.mode-gemini { --accent: var(--gemini-color); --bg: #020617; }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html {
@@ -42,7 +38,7 @@
         .app-container { display: flex; flex-direction: column; height: 100dvh; }
 
         header {
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
             padding: 10px 15px;
@@ -84,7 +80,7 @@
 
         .role-badge {
             font-family: var(--font-mono); font-size: 10px; font-weight: 800;
-            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; color: var(--accent);
         }
         .role-badge::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
@@ -108,14 +104,14 @@
 
         .send-btn {
             width: 46px; height: 46px; background: var(--accent); color: var(--bg);
-            border: none; border-radius: var(--send-radius); cursor: pointer;
+            border: none; border-radius: 12px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             transition: var(--transition); flex-shrink: 0;
         }
 
         @media (min-width: 768px) {
             header { flex-direction: row; align-items: center; padding: 12px 30px; }
-            footer { padding: 25px; }
+            footer { padding: 20px; }
         }
     </style>
 </head>
@@ -132,26 +128,31 @@
             </div>
 
             <div class="controls">
-                <input type="password" id="api-key" placeholder="API Key..." style="width: 120px;">
-                <input type="text" id="api-url" placeholder="Proxy URL (OpenAI-compatible)..." style="width: 180px;">
-                <input type="text" id="model-name" placeholder="Model Name..." style="width: 140px;">
-                <button class="action-btn" onclick="clearConsole()">CLEAR</button>
+                <select id="model-select">
+                    <option value="llama3-70b-8192">LLaMA 3 70B (Groq)</option>
+                    <option value="llama3-8b-8192">LLaMA 3 8B (Groq)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                </select>
+                <button class="action-btn" onclick="syncModels()" style="background: var(--accent); color: var(--bg); font-weight: 800;">SYNC</button>
+                <input type="password" id="api-key" placeholder="API Key..." style="width: 100px;">
+                <input type="text" id="api-url" placeholder="Proxy URL (OpenAI-compatible)" style="width: 200px;">
+                <button class="action-btn" onclick="clearConsole()">PURGE</button>
             </div>
         </header>
 
         <main id="chat-scroller">
             <div class="msg system">
-                <div class="role-badge" style="color: var(--accent)">SYSTEM // OMNI-CONSOLE v7.2-R</div>
-                <div class="content">UI Restored. Bridge Logic Active. Enter your Provider details above to communicate with the Trinity in the real world.</div>
+                <div class="role-badge">SYSTEM // v7.5 FINAL</div>
+                <div class="content">Consolidated Public Edition. Professional architecture active. Sync your models and communicate through the Bridge.</div>
             </div>
         </main>
 
         <footer>
             <div class="input-wrapper">
-                <div class="input-box" id="input-container">
+                <div class="input-box">
                     <textarea id="user-input" placeholder="Message the Trinity..." rows="1" onkeydown="handleKey(event)" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
                 </div>
-                <button class="send-btn" id="send-trigger" onclick="sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </div>
@@ -161,10 +162,17 @@
     <script>
         const STATE = { trinity: 'gemini', busy: false };
 
-        // Persistence
-        document.getElementById('api-key').value = localStorage.getItem('omni_key') || '';
-        document.getElementById('api-url').value = localStorage.getItem('omni_url') || '';
-        document.getElementById('model-name').value = localStorage.getItem('omni_model') || '';
+        // Persistent Session Logic
+        window.onload = () => {
+            document.getElementById('api-key').value = localStorage.getItem('omni_key') || '';
+            document.getElementById('api-url').value = localStorage.getItem('omni_url') || '';
+            const savedModel = localStorage.getItem('omni_model');
+            if (savedModel) {
+                const select = document.getElementById('model-select');
+                const exists = Array.from(select.options).some(opt => opt.value === savedModel);
+                if (exists) select.value = savedModel;
+            }
+        };
 
         function setTrinity(mode) {
             STATE.trinity = mode;
@@ -173,19 +181,46 @@
             document.body.className = `mode-${mode}`;
         }
 
+        async function syncModels() {
+            const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
+            const key = document.getElementById('api-key').value.trim();
+            if (!url || !key) {
+                addMsg('system', '⚠ Configuration Required: URL and Key needed for sync.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${url}/models`, {
+                    headers: { 'Authorization': `Bearer ${key}` }
+                });
+                const data = await res.json();
+                const select = document.getElementById('model-select');
+                select.innerHTML = '';
+                
+                data.data.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.id;
+                    select.appendChild(opt);
+                });
+                addMsg('system', `📡 Proxy Synchronized: ${data.data.length} models available.`);
+            } catch (err) {
+                addMsg('system', '❌ Sync Failed: Check Proxy URL/CORS settings.');
+            }
+        }
+
         async function sendMessage() {
             const text = document.getElementById('user-input').value.trim();
             const key = document.getElementById('api-key').value.trim();
             const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
-            const model = document.getElementById('model-name').value.trim();
+            const model = document.getElementById('model-select').value;
 
             if (!text || STATE.busy) return;
             if (!key || !url) {
-                addMsg('system', '⚠ Configuration Required: Enter Key and Proxy URL.');
+                addMsg('system', '⚠ Bridge Error: Key and URL required.');
                 return;
             }
 
-            // Save for next session
             localStorage.setItem('omni_key', key);
             localStorage.setItem('omni_url', url);
             localStorage.setItem('omni_model', model);
@@ -194,18 +229,20 @@
             document.getElementById('user-input').value = '';
             document.getElementById('user-input').style.height = 'auto';
             addMsg('user', text);
-            const botMsg = addMsg('bot', 'Connecting...');
+            const botMsg = addMsg('bot', 'Processing...');
             const contentDiv = botMsg.querySelector('.content');
 
             try {
                 const res = await fetch(`${url}/chat/completions`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                    body: JSON.stringify({ model: model || 'gpt-3.5-turbo', messages: [{role: 'user', content: text}] })
+                    body: JSON.stringify({ model: model, messages: [{role: 'user', content: text}] })
                 });
                 const data = await res.json();
                 contentDiv.innerHTML = marked.parse(data.choices[0].message.content);
-            } catch (err) { contentDiv.innerHTML = "❌ Connection Failed. Check Bridge Settings."; }
+            } catch (err) { 
+                contentDiv.innerHTML = "❌ Connection Fault: Ensure the API provider is active.";
+            }
             STATE.busy = false;
         }
 
