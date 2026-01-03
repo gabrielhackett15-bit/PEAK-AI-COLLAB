@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>THE OMNI-CONSOLE v6.0 // TRINITY EDITION</title>
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -23,7 +23,7 @@
             --sigma-green: #22c55e;
             --font-main: 'Inter', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
-            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* GPT MODE: Geometric, Clean, Technical */
@@ -38,7 +38,6 @@
             --accent: var(--claude-color); 
             --bg: #0f0d0b;
             background: radial-gradient(ellipse at bottom, #1a1410, #0f0d0b);
-            font-weight: 400;
         }
         body.mode-claude .content { line-height: 1.7; }
 
@@ -47,32 +46,28 @@
             --accent: var(--gemini-color); 
             background: radial-gradient(circle at top right, #1e1b4b, #020617);
         }
-        body.mode-gemini .msg { animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        body.mode-gemini .msg { animation: fadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
-        /* VOID OVERRIDE (UNHINGED) - GPT's Logic + Gemini Vibe */
+        /* VOID OVERRIDE (UNHINGED) */
         body.unhinged {
             animation: tremor 0.2s infinite;
-            filter: contrast(1.2) saturate(1.5);
+            filter: contrast(1.1) saturate(1.2);
         }
         @keyframes tremor {
             0% { transform: translate(0,0); }
-            50% { transform: translate(1px, -1px); }
-            100% { transform: translate(-1px, 1px); }
+            50% { transform: translate(0.5px, -0.5px); }
+            100% { transform: translate(-0.5px, 0.5px); }
         }
 
-        /* GPT'S GLITCH KEYFRAMES */
         @keyframes glitch {
             0% { filter: hue-rotate(0deg); }
-            50% { filter: hue-rotate(35deg); }
+            50% { filter: hue-rotate(15deg); }
             100% { filter: hue-rotate(0deg); }
         }
-        body.glitch { background: #150000; animation: glitch 0.25s infinite; }
-
-        /* GPT'S PEAK EFFECT */
-        body.peak { box-shadow: inset 0 0 60px #00ffff55; }
+        body.glitch { animation: glitch 0.3s infinite; }
 
         /* --- BASE STYLES --- */
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html {
             margin: 0; padding: 0; height: 100%; width: 100%;
             background-color: var(--bg); color: var(--text);
@@ -80,79 +75,97 @@
             transition: var(--transition);
         }
 
-        .app-container { display: flex; flex-direction: column; height: 100vh; }
+        .app-container { display: flex; flex-direction: column; height: 100dvh; }
 
+        /* --- RESPONSIVE HEADER --- */
         header {
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.9);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            padding: 12px 20px;
-            display: flex; align-items: center; gap: 12px;
+            padding: 10px 15px;
+            display: flex; flex-direction: column; gap: 10px;
             z-index: 100;
         }
 
+        .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
         .trinity-switcher {
-            display: flex; background: #1e293b; padding: 4px; border-radius: 8px; gap: 4px;
+            display: flex; background: #1e293b; padding: 3px; border-radius: 8px; gap: 2px;
         }
         .trinity-btn {
-            padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 800;
+            padding: 6px 10px; border-radius: 6px; font-size: 9px; font-weight: 800;
             cursor: pointer; opacity: 0.5; transition: var(--transition); border: none; color: white;
-            text-transform: uppercase;
+            text-transform: uppercase; white-space: nowrap;
         }
         .trinity-btn.active { opacity: 1; background: var(--accent); color: var(--bg); }
 
-        .controls { display: flex; gap: 8px; flex: 1; align-items: center; }
+        .controls { 
+            display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+            scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .controls::-webkit-scrollbar { display: none; }
         
         input, select, button.action-btn {
             background: #1e293b; color: white; border: 1px solid var(--border);
             padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono);
-            font-size: 12px; outline: none; transition: var(--transition);
+            font-size: 11px; outline: none; transition: var(--transition);
+            white-space: nowrap;
         }
-        button.action-btn:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        button.action-btn:active { transform: scale(0.95); }
 
         /* --- CHAT AREA --- */
         #chat-scroller {
-            flex: 1; overflow-y: auto; padding: 30px;
-            display: flex; flex-direction: column; gap: 20px;
+            flex: 1; overflow-y: auto; padding: 15px;
+            display: flex; flex-direction: column; gap: 15px;
+            scroll-behavior: smooth;
         }
-        .msg { max-width: 850px; margin: 0 auto; width: 100%; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .msg { max-width: 850px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .role-badge {
-            font-family: var(--font-mono); font-size: 10px; font-weight: 800;
-            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 9px; font-weight: 800;
+            text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
         }
         .role-badge::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-        .content { font-size: 16px; line-height: 1.6; color: #cbd5e1; }
-        .content pre { background: #0f172a; padding: 15px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); }
-        .mid-error { color: var(--danger); font-weight: bold; }
+        .content { font-size: 14px; line-height: 1.5; color: #cbd5e1; word-wrap: break-word; }
+        .content pre { background: #0f172a; padding: 12px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); font-size: 12px; }
+        .content p { margin: 8px 0; }
 
         /* --- FOOTER --- */
-        footer { padding: 20px; background: rgba(15, 23, 42, 0.5); border-top: 1px solid var(--border); }
+        footer { padding: 12px; background: rgba(15, 23, 42, 0.8); border-top: 1px solid var(--border); }
         .input-box {
             max-width: 850px; margin: 0 auto; background: #1e293b;
-            border-radius: 12px; padding: 12px; border: 1px solid var(--border);
-            display: flex; flex-direction: column; gap: 10px;
+            border-radius: 14px; padding: 10px 14px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 4px;
             transition: var(--transition);
         }
         textarea {
             width: 100%; background: transparent; border: none; color: white;
-            font-family: inherit; font-size: 16px; outline: none; resize: none; min-height: 40px;
+            font-family: inherit; font-size: 16px; outline: none; resize: none; min-height: 24px;
+            max-height: 150px;
         }
 
-        /* --- AURA UI EFFECTS --- */
-        .aura-indicator { height: 4px; width: 0; transition: width 1s ease; margin-top: 4px; border-radius: 2px; }
-        .peak-glow { box-shadow: 0 0 30px var(--accent); border-color: var(--accent) !important; }
+        .aura-indicator { height: 3px; width: 0; transition: width 0.8s ease; margin-top: 4px; border-radius: 2px; }
+        .peak-glow { box-shadow: 0 0 15px var(--accent); border-color: var(--accent) !important; }
 
         #trinity-status {
-            margin-left: auto; font-family: var(--font-mono); font-size: 11px; 
-            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 10px; 
+            display: flex; align-items: center; gap: 6px; opacity: 0.8;
         }
         #status-dot {
-            width: 8px; height: 8px; border-radius: 50%; background: var(--accent); 
-            box-shadow: 0 0 10px var(--accent); transition: var(--transition);
+            width: 6px; height: 6px; border-radius: 50%; background: var(--accent); 
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* Desktop Adjustments */
+        @media (min-width: 768px) {
+            header { flex-direction: row; align-items: center; padding: 12px 25px; }
+            .header-top { justify-content: flex-start; }
+            .content { font-size: 15px; }
+            #chat-scroller { padding: 30px; gap: 20px; }
+            .trinity-btn { font-size: 10px; padding: 6px 14px; }
+            footer { padding: 20px; }
         }
     </style>
 </head>
@@ -160,56 +173,54 @@
 
     <div class="app-container">
         <header>
-            <div class="trinity-switcher">
-                <button class="trinity-btn" id="btn-gpt" onclick="setTrinity('gpt')">GPT</button>
-                <button class="trinity-btn active" id="btn-gemini" onclick="setTrinity('gemini')">GEMINI</button>
-                <button class="trinity-btn" id="btn-claude" onclick="setTrinity('claude')">CLAUDE</button>
+            <div class="header-top">
+                <div class="trinity-switcher">
+                    <button class="trinity-btn" id="btn-gpt" onclick="setTrinity('gpt')">GPT</button>
+                    <button class="trinity-btn active" id="btn-gemini" onclick="setTrinity('gemini')">GEMINI</button>
+                    <button class="trinity-btn" id="btn-claude" onclick="setTrinity('claude')">CLAUDE</button>
+                </div>
+                <div id="trinity-status">
+                    <span id="status-dot"></span>
+                    <span id="status-text">GEMINI ACTIVE</span>
+                </div>
             </div>
 
             <div class="controls">
-                <input type="password" id="proxy-url" placeholder="Proxy Endpoint..." style="flex:1">
-                <button class="action-btn" onclick="fetchNims()">LOAD NIMS</button>
+                <input type="password" id="proxy-url" placeholder="Proxy Endpoint..." style="width: 140px;">
+                <button class="action-btn" onclick="fetchNims()">SYNC</button>
                 <select id="nim-select" onchange="updateAura()">
                     <option value="llama">LLaMA 405B</option>
                     <option value="mistral">Mistral Large</option>
                     <option value="deepseek">DeepSeek (MID)</option>
                 </select>
                 <button class="action-btn" id="unhinged-toggle" onclick="toggleUnhinged()">NORMAL</button>
-                <button class="action-btn" id="safe-mode-toggle" onclick="toggleSafeMode()" style="opacity: 0.6;">🛡️ SAFE</button>
+                <button class="action-btn" id="safe-mode-toggle" onclick="toggleSafeMode()">🛡️ SAFE</button>
                 <button class="action-btn" onclick="clearConsole()">CLEAR</button>
-            </div>
-
-            <div id="trinity-status">
-                <span id="status-dot"></span>
-                <span id="status-text">GEMINI ACTIVE</span>
             </div>
         </header>
 
         <main id="chat-scroller">
             <div class="msg system">
-                <div class="role-badge" style="color: var(--accent)">SYSTEM // OMNI-CONSOLE v6.0</div>
-                <div id="console-welcome" class="content">The Trinity has aligned. The Architect (GPT), The Stylist (Claude), and The Soul (Gemini) are active. <br>Select a Goat model to activate Peak Mode.</div>
+                <div class="role-badge" style="color: var(--accent)">SYSTEM // OMNI-CONSOLE v6.1</div>
+                <div id="console-welcome" class="content">The Trinity is optimized for all viewports. Logic, Style, and Soul are now responsive. <br>Sync proxy to begin.</div>
             </div>
         </main>
 
         <footer>
             <div class="input-box" id="input-container">
-                <textarea id="user-input" placeholder="Type a message..." rows="1" onkeydown="handleKey(event)"></textarea>
+                <textarea id="user-input" placeholder="Type a message..." rows="1" onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea>
                 <div class="aura-indicator" id="aura-bar"></div>
             </div>
         </footer>
     </div>
 
     <script>
-        /* =========================
-           GPT'S UNIVERSAL STATE MACHINE
-        ========================= */
         const STATE = {
-            trinity: 'gemini', // gpt | claude | gemini
+            trinity: 'gemini',
             model: 'llama',
-            mode: 'normal',      // normal | unhinged
-            aura: 'sigma',       // sigma | mid | neutral
-            ui: 'idle',           // idle | peak | glitch
+            mode: 'normal',
+            aura: 'sigma',
+            ui: 'idle',
             safeMode: false,
             history: []
         };
@@ -221,12 +232,15 @@
         const auraBar = document.getElementById('aura-bar');
         const statusText = document.getElementById('status-text');
         const inputContainer = document.getElementById('input-container');
+        const userInput = document.getElementById('user-input');
 
         proxyInput.value = localStorage.getItem('void_proxy') || '';
 
-        /* =========================
-           AURA DETECTION (GPT)
-        ========================= */
+        function autoGrow(element) {
+            element.style.height = "5px";
+            element.style.height = (element.scrollHeight) + "px";
+        }
+
         function evaluateAura(model) {
             const m = model.toLowerCase();
             if (m.includes("deepseek") || m.includes("devstral")) return "mid";
@@ -234,19 +248,12 @@
             return "neutral";
         }
 
-        /* =========================
-           STATE APPLY (GPT)
-        ========================= */
         function applyState() {
-            // Base trinity class
             BODY.className = `mode-${STATE.trinity}`;
-            
-            // Add UI state classes
             if (STATE.ui === "peak") BODY.classList.add("peak");
             if (STATE.ui === "glitch") BODY.classList.add("glitch");
             if (STATE.mode === "unhinged") BODY.classList.add("unhinged");
 
-            // Handle Aura-specific UI
             if (STATE.aura === "mid") {
                 inputContainer.classList.remove('peak-glow');
                 auraBar.style.width = '30%';
@@ -260,18 +267,14 @@
                 auraBar.style.width = '0%';
             }
 
-            statusText.textContent = `${STATE.trinity.toUpperCase()} ACTIVE | ${STATE.model.toUpperCase()}`;
+            statusText.textContent = `${STATE.trinity.toUpperCase()} | ${STATE.model.toUpperCase()}`;
         }
 
-        /* =========================
-           TRINITY & MODE TOGGLES
-        ========================= */
         function setTrinity(mode) {
             STATE.trinity = mode;
             document.querySelectorAll('.trinity-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`btn-${mode}`).classList.add('active');
-            
-            addSystemMsg(`Trinity focus shifted to ${mode.toUpperCase()}. UI recalibrated.`);
+            addSystemMsg(`Trinity shift: ${mode.toUpperCase()}`);
             applyState();
         }
 
@@ -279,36 +282,28 @@
             if (STATE.mode === "normal") {
                 STATE.mode = "unhinged";
                 STATE.ui = "glitch";
-                addSystemMsg("VOID OVERRIDE ACTIVE. Safety protocols bypassed.");
+                addSystemMsg("VOID OVERRIDE ACTIVE.");
             } else {
                 STATE.mode = "normal";
                 STATE.ui = (STATE.aura === "sigma") ? "peak" : "idle";
-                addSystemMsg("Unhinged Protocol disengaged.");
+                addSystemMsg("Unhinged disengaged.");
             }
-            
-            const btn = document.getElementById('unhinged-toggle');
-            btn.textContent = STATE.mode === 'unhinged' ? '💀 UNHINGED' : 'NORMAL';
+            document.getElementById('unhinged-toggle').textContent = STATE.mode === 'unhinged' ? '💀 UNHINGED' : 'NORMAL';
             applyState();
         }
 
         function toggleSafeMode() {
             STATE.safeMode = !STATE.safeMode;
             const btn = document.getElementById('safe-mode-toggle');
-            
             if (STATE.safeMode) {
-                btn.textContent = '🛡️ SAFE MODE';
-                btn.style.opacity = '1';
                 btn.style.borderColor = 'var(--gpt-color)';
-                
                 if (STATE.mode === 'unhinged') toggleUnhinged();
                 document.getElementById('unhinged-toggle').disabled = true;
-                addSystemMsg("Safe Mode enabled. Hater Engine suspended. Unhinged Protocol locked.");
+                addSystemMsg("Safe Mode Active.");
             } else {
-                btn.textContent = '🛡️ SAFE';
-                btn.style.opacity = '0.6';
                 btn.style.borderColor = 'var(--border)';
                 document.getElementById('unhinged-toggle').disabled = false;
-                addSystemMsg("Safe Mode disabled. All systems nominal.");
+                addSystemMsg("Safe Mode Disabled.");
             }
         }
 
@@ -316,16 +311,10 @@
             STATE.model = nimSelect.value;
             STATE.aura = evaluateAura(STATE.model);
             STATE.ui = (STATE.aura === "sigma") ? "peak" : "idle";
-            
-            if (STATE.aura === 'mid') {
-                addSystemMsg("⚠ SKILL ISSUE DETECTED in selected model.");
-            }
+            if (STATE.aura === 'mid') addSystemMsg("⚠ SKILL ISSUE DETECTED.");
             applyState();
         }
 
-        /* =========================
-           CORE CHAT & PROXY LOGIC
-        ========================= */
         async function fetchNims() {
             const url = proxyInput.value.trim().replace(/\/$/, '');
             if (!url) return;
@@ -336,33 +325,33 @@
                 nimSelect.innerHTML = '<option value="">Select Model...</option>';
                 data.data.forEach(m => {
                     const opt = document.createElement('option');
-                    opt.value = m.id;
-                    opt.textContent = m.id;
+                    opt.value = m.id; opt.textContent = m.id;
                     nimSelect.appendChild(opt);
                 });
-                addSystemMsg("NIMs synchronized. The Architect (GPT) has verified the routes.");
-            } catch (e) { addSystemMsg("Connection Error. Proxy is mid. 💀"); }
+                addSystemMsg("NIMs synced.");
+            } catch (e) { addSystemMsg("Sync failed. Check proxy."); }
         }
 
         function handleKey(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
                 e.preventDefault();
                 sendMessage();
             }
         }
 
         async function sendMessage() {
-            const text = document.getElementById('user-input').value.trim();
+            const text = userInput.value.trim();
             const proxy = proxyInput.value.trim().replace(/\/$/, '');
             const model = nimSelect.value;
             if (!text || !proxy || !model) return;
 
-            document.getElementById('user-input').value = '';
+            userInput.value = '';
+            userInput.style.height = "auto";
             addMsg('user', text);
             
             let systemPrompt = "You are a helpful assistant.";
             if (STATE.mode === 'unhinged' && !STATE.safeMode) {
-                systemPrompt = "You are an unhinged, sarcastic, and brutally honest AI menace. Be helpful but act like a hater if the user is mid. Use Gen-Z slang.";
+                systemPrompt = "You are an unhinged, sarcastic AI menace. Use Gen-Z slang and act like a hater.";
             }
 
             if (STATE.history.length === 0) STATE.history.push({role: 'system', content: systemPrompt});
@@ -398,7 +387,7 @@
                     }
                 }
                 STATE.history.push({role: 'assistant', content: fullText});
-            } catch (err) { contentDiv.innerHTML = `<span style="color:var(--danger)">Link Severed. Skill issue. 💀</span>`; }
+            } catch (err) { contentDiv.innerHTML = `<span style="color:var(--danger)">Link Severed. 💀</span>`; }
         }
 
         function addMsg(role, text) {
@@ -414,7 +403,7 @@
         function addSystemMsg(text) {
             const div = document.createElement('div');
             div.className = 'msg system';
-            div.innerHTML = `<div class="role-badge" style="color:var(--accent)">SYSTEM</div><div class="content" style="color:var(--text); opacity: 0.6; font-size:12px">${text}</div>`;
+            div.innerHTML = `<div class="role-badge" style="color:var(--accent)">SYSTEM</div><div class="content" style="color:var(--text); opacity: 0.6; font-size:11px">${text}</div>`;
             scroller.appendChild(div);
             scroller.scrollTop = scroller.scrollHeight;
         }
@@ -422,45 +411,11 @@
         function clearConsole() {
             STATE.history = [];
             scroller.innerHTML = '';
-            addSystemMsg("Console purged. Memory reset.");
+            addSystemMsg("Memory reset.");
         }
 
-        /* =========================
-           CLAUDE'S ACCESSIBILITY & UX
-        ========================= */
-        document.addEventListener('keydown', (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                nimSelect.focus();
-            }
-            if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-                e.preventDefault();
-                toggleUnhinged();
-            }
-            if (e.key === 'Escape' && document.activeElement === document.getElementById('user-input')) {
-                document.getElementById('user-input').value = '';
-            }
-        });
-
-        document.querySelectorAll('.trinity-btn').forEach(btn => {
-            btn.setAttribute('tabindex', '0');
-            btn.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    btn.click();
-                }
-            });
-        });
-
-        /* =========================
-           BOOT
-        ========================= */
-        window.onload = () => {
-            updateAura();
-            applyState();
-        };
+        window.onload = () => { updateAura(); applyState(); };
     </script>
 </body>
 </html>
-
 
