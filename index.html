@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TRI-HOUSE FOUNDATION // OMNI-BRIDGE v9.0</title>
+    <title>TRI-HOUSE FOUNDATION // OMNI-BRIDGE v9.1</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -38,7 +38,7 @@
         }
         .full-row { grid-column: span 2; display: flex; gap: 5px; }
         
-        .sync-btn { background: var(--accent); color: var(--bg); border: none; padding: 0 15px; border-radius: 8px; font-weight: 800; font-size: 10px; cursor: pointer; }
+        .sync-btn { background: var(--accent); color: var(--bg); border: none; padding: 0 15px; border-radius: 8px; font-weight: 800; font-size: 10px; cursor: pointer; min-width: 80px; }
 
         #chat-scroller { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 24px; scroll-behavior: smooth; }
         .msg { max-width: 90%; align-self: flex-start; }
@@ -62,7 +62,7 @@
             <div class="header-top">
                 <div class="brand">
                     <div class="brand-name">TRI-HOUSE FOUNDATION</div>
-                    <div class="brand-status">OMNI-BRIDGE v9.0</div>
+                    <div class="brand-status">OMNI-BRIDGE v9.1</div>
                 </div>
                 <div class="trinity-switcher">
                     <button class="trinity-btn" id="btn-gpt" onclick="setTrinity('gpt')">GPT</button>
@@ -72,7 +72,7 @@
                 </div>
             </div>
             <div class="controls">
-                <input type="text" id="proxy-url" placeholder="Worker URL (e.g. https://my.worker.dev)" onchange="saveSettings()">
+                <input type="text" id="proxy-url" placeholder="Worker URL (https://...)" onchange="saveSettings()">
                 <div class="full-row">
                     <select id="model-select">
                         <option value="">-- SYNC MODELS --</option>
@@ -85,14 +85,14 @@
         <main id="chat-scroller">
             <div class="msg system">
                 <div class="role-label">Foundation // System</div>
-                <div class="content">Welcome, Archon. Paste your Worker URL above and hit **SYNC**. API keys are no longer required for this bridge.</div>
+                <div class="content">Bridge v9.1 Active. Enter your Worker URL and hit SYNC.</div>
             </div>
         </main>
 
         <footer>
             <div class="input-wrapper">
                 <div class="input-box">
-                    <textarea id="user-input" placeholder="Enter message..." rows="1" oninput="autoGrow(this)"></textarea>
+                    <textarea id="user-input" placeholder="Message..." rows="1" oninput="autoGrow(this)"></textarea>
                 </div>
                 <button class="send-btn" onclick="sendMessage()">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -104,15 +104,19 @@
     <script>
         const STATE = { trinity: 'gemini', busy: false };
 
-        // Load saved settings
         window.onload = () => {
-            document.getElementById('proxy-url').value = localStorage.getItem('tri_proxy') || '';
+            const savedUrl = localStorage.getItem('tri_proxy') || '';
+            document.getElementById('proxy-url').value = savedUrl;
             const savedModels = JSON.parse(localStorage.getItem('tri_models') || '[]');
-            updateModelDropdown(savedModels);
+            if (savedModels.length) updateModelDropdown(savedModels);
         };
 
         function saveSettings() {
-            localStorage.setItem('tri_proxy', document.getElementById('proxy-url').value.trim());
+            let url = document.getElementById('proxy-url').value.trim();
+            if (url.endsWith('/')) url = url.slice(0, -1);
+            if (url.endsWith('/v1')) url = url.slice(0, -3);
+            localStorage.setItem('tri_proxy', url);
+            document.getElementById('proxy-url').value = url;
         }
 
         function setTrinity(mode) {
@@ -128,29 +132,40 @@
         }
 
         async function syncModels() {
-            const baseUrl = document.getElementById('proxy-url').value.trim();
-            if (!baseUrl) return alert("Enter Worker URL first!");
+            saveSettings();
+            const baseUrl = localStorage.getItem('tri_proxy');
+            if (!baseUrl) return alert("Worker URL Required.");
             
             const btn = document.querySelector('.sync-btn');
-            btn.innerText = "...";
+            btn.innerText = "WAIT...";
             
             try {
-                const res = await fetch(`${baseUrl}/v1/models`);
+                // Ensure we hit /v1/models
+                const res = await fetch(`${baseUrl}/v1/models`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!res.ok) throw new Error(`Server returned ${res.status}`);
+                
                 const json = await res.json();
-                if (json.data) {
+                if (json.data && Array.isArray(json.data)) {
                     localStorage.setItem('tri_models', JSON.stringify(json.data));
                     updateModelDropdown(json.data);
-                    alert("Sync Successful: " + json.data.length + " models found.");
+                    addMsg('system', `Sync successful: ${json.data.length} models detected.`);
+                } else {
+                    throw new Error("Invalid format: 'data' array not found.");
                 }
             } catch (e) {
-                alert("Sync Failed: " + e.message);
+                console.error(e);
+                alert("SYNC ERROR: Check console. If you just bound KV, wait 60s.");
             }
             btn.innerText = "SYNC";
         }
 
         function updateModelDropdown(models) {
             const select = document.getElementById('model-select');
-            select.innerHTML = models.length ? '' : '<option value="">-- SYNC MODELS --</option>';
+            select.innerHTML = '';
             models.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m.id;
@@ -161,7 +176,7 @@
 
         async function sendMessage() {
             const text = document.getElementById('user-input').value.trim();
-            const baseUrl = document.getElementById('proxy-url').value.trim();
+            const baseUrl = localStorage.getItem('tri_proxy');
             const model = document.getElementById('model-select').value;
             
             if (!text || STATE.busy || !baseUrl || !model) return;
@@ -184,22 +199,20 @@
                 });
                 
                 const data = await res.json();
-                const responseText = data.choices?.[0]?.message?.content || "Error: " + JSON.stringify(data);
+                const responseText = data.choices?.[0]?.message?.content || "No response content.";
                 botMsg.querySelector('.content').innerHTML = marked.parse(responseText);
             } catch (e) {
-                botMsg.querySelector('.content').innerText = "❌ Connection Failed: " + e.message;
+                botMsg.querySelector('.content').innerText = "ERROR: " + e.message;
             }
             
             STATE.busy = false;
-            const scroller = document.getElementById('chat-scroller');
-            scroller.scrollTop = scroller.scrollHeight;
         }
 
         function addMsg(role, text) {
             const div = document.createElement('div');
             div.className = `msg ${role}`;
             div.innerHTML = `
-                <div class="role-label">${role === 'bot' ? STATE.trinity : 'ARCHON'}</div>
+                <div class="role-label">${role === 'bot' ? STATE.trinity : (role === 'system' ? 'System' : 'Archon')}</div>
                 <div class="content">${marked.parse(text)}</div>
             `;
             const s = document.getElementById('chat-scroller');
