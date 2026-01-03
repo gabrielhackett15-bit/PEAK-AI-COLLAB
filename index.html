@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE OMNI-CONSOLE v7.5.1 // FIXER</title>
+    <title>THE OMNI-CONSOLE v7.5.1 // FINAL ARCHIVE</title>
     <!-- EXTERNAL LIBRARIES -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -142,8 +142,8 @@
 
         <main id="chat-scroller">
             <div class="msg system">
-                <div class="role-badge">SYSTEM // v7.5.1 FIXER</div>
-                <div class="content">Auto-Discovery Engine active. If SYNC fails, ensure your Proxy URL includes the <code>/v1</code> suffix (e.g., <code>https://api.groq.com/openai/v1</code>).</div>
+                <div class="role-badge">SYSTEM // v7.5.1 FINAL ARCHIVE</div>
+                <div class="content">Stability Confirmed. Mumble mode detected in the local atmosphere. The Trinity is locked and the sync engine is universal. Ready for production.</div>
             </div>
         </main>
 
@@ -201,7 +201,7 @@
             const btn = document.getElementById('sync-btn');
             
             if (!url || !key) {
-                addMsg('system', '⚠ Sync Failure: URL and Key required.');
+                addMsg('system', '⚠ Configuration Required: URL and Key needed for discovery.');
                 return;
             }
 
@@ -214,7 +214,6 @@
                 });
                 const data = await res.json();
                 
-                // Flexible parsing: handles {data: [...]} or just [...]
                 let modelIds = [];
                 if (Array.isArray(data)) {
                     modelIds = data.map(m => m.id || m);
@@ -230,7 +229,7 @@
                     throw new Error("No models found in response.");
                 }
             } catch (err) {
-                addMsg('system', `❌ Sync Failed: ${err.message}. Try adding /v1 to your URL.`);
+                addMsg('system', `❌ Sync Failed: ${err.message}. Ensure your URL is correct.`);
             } finally {
                 btn.innerText = "SYNC";
                 btn.disabled = false;
