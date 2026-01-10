@@ -3,312 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>THE OMNI-CONSOLE v7.9 // CLASSIC</title>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
+    <title>Trinity V22 Proxy</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #020617;
-            --panel: #0f172a;
-            --border: #1e293b;
-            --text: #f1f5f9;
-            --accent: #8b5cf6;
-            --gpt-color: #10b981;
-            --claude-color: #d97706;
-            --gemini-color: #8b5cf6;
-            --font-main: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        body.mode-gpt { --accent: var(--gpt-color); --bg: #0a0a0a; }
-        body.mode-claude { --accent: var(--claude-color); --bg: #0f0d0b; }
-        body.mode-gemini { --accent: var(--gemini-color); --bg: #020617; }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html {
-            margin: 0; padding: 0; height: 100%; width: 100%;
-            background-color: var(--bg); color: var(--text);
-            font-family: var(--font-main); overflow: hidden;
-            transition: var(--transition);
-        }
-
-        .app-container { display: flex; flex-direction: column; height: 100dvh; }
-
-        header {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 15px;
-            display: flex; flex-direction: column; gap: 10px;
-            z-index: 100;
-        }
-
-        .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-
-        .trinity-switcher {
-            display: flex; background: #1e293b; padding: 3px; border-radius: 8px; gap: 2px;
-        }
-        .trinity-btn {
-            padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: 800;
-            cursor: pointer; opacity: 0.5; transition: var(--transition); border: none; color: white;
-            text-transform: uppercase;
-        }
-        .trinity-btn.active { opacity: 1; background: var(--accent); color: var(--bg); }
-
-        .controls { 
-            display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
-            scrollbar-width: none;
-        }
-        .controls::-webkit-scrollbar { display: none; }
-        
-        input, select, button.action-btn {
-            background: #1e293b; color: white; border: 1px solid var(--border);
-            padding: 8px 12px; border-radius: 6px; font-family: var(--font-mono);
-            font-size: 11px; outline: none; transition: var(--transition);
-        }
-
-        #chat-scroller {
-            flex: 1; overflow-y: auto; padding: 15px;
-            display: flex; flex-direction: column; gap: 20px;
-            scroll-behavior: smooth;
-        }
-        .msg { max-width: 850px; margin: 0 auto; width: 100%; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        .role-badge {
-            font-family: var(--font-mono); font-size: 10px; font-weight: 800;
-            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; color: var(--accent);
-        }
-        .role-badge::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-        .content { font-size: 15px; line-height: 1.6; color: #cbd5e1; word-wrap: break-word; }
-        .content pre { background: #0f172a; padding: 14px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); font-size: 13px; margin: 12px 0; }
-
-        footer { padding: 12px; background: rgba(15, 23, 42, 0.85); border-top: 1px solid var(--border); }
-        .input-wrapper {
-            max-width: 850px; margin: 0 auto; display: flex; align-items: flex-end; gap: 12px;
-        }
-        .input-box {
-            flex: 1; background: #1e293b;
-            border-radius: 14px; padding: 10px 14px; border: 1px solid var(--border);
-            display: flex; flex-direction: column; gap: 4px;
-        }
-        textarea {
-            width: 100%; background: transparent; border: none; color: white;
-            font-family: inherit; font-size: 16px; outline: none; resize: none; min-height: 24px;
-            max-height: 160px;
-        }
-
-        .send-btn {
-            width: 46px; height: 46px; background: var(--accent); color: var(--bg);
-            border: none; border-radius: 12px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: var(--transition); flex-shrink: 0;
-        }
-
-        @media (min-width: 768px) {
-            header { flex-direction: row; align-items: center; padding: 12px 30px; }
-            footer { padding: 25px; }
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #050507; color: #e2e8f0; margin: 0; overflow: hidden; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
+        .council-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease; }
+        .council-card:active { transform: scale(0.98); background: rgba(255,255,255,0.06); }
+        textarea { caret-color: #6366f1; }
     </style>
 </head>
-<body class="mode-gemini">
+<body>
+    <div id="root"></div>
 
-    <div class="app-container">
-        <header>
-            <div class="header-top">
-                <div class="trinity-switcher">
-                    <button class="trinity-btn" id="btn-gpt" onclick="setTrinity('gpt')">GPT</button>
-                    <button class="trinity-btn" id="btn-gpt5" onclick="setTrinity('gpt5')">GPT-5</button>
-                    <button class="trinity-btn active" id="btn-gemini" onclick="setTrinity('gemini')">GEMINI</button>
-                    <button class="trinity-btn" id="btn-claude" onclick="setTrinity('claude')">CLAUDE</button>
-                </div>
-            </div>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-            <div class="controls">
-                <select id="model-select">
-                    <option value="">(Sync Required)</option>
-                </select>
-                <button class="action-btn" onclick="syncModels()" id="sync-btn" style="background: var(--accent); color: var(--bg); font-weight: 800;">SYNC</button>
-                <input type="password" id="api-key" placeholder="API Key..." style="width: 100px;">
-                <input type="text" id="api-url" placeholder="Proxy URL (v1)" style="width: 200px;">
-                <button class="action-btn" onclick="clearConsole()">PURGE</button>
-            </div>
-        </header>
-
-        <main id="chat-scroller">
-            <div class="msg system">
-                <div class="role-badge">SYSTEM // v7.9 RESTORED</div>
-                <div class="content">The Classic UI is back. The Engine is Centurion v14.0. Sync to load the Omega Roster.</div>
-            </div>
-        </main>
-
-        <footer>
-            <div class="input-wrapper">
-                <div class="input-box">
-                    <textarea id="user-input" placeholder="Message the Trinity..." rows="1" onkeydown="handleKey(event)" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
-                </div>
-                <button class="send-btn" onclick="sendMessage()">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                </button>
-            </div>
-        </footer>
-    </div>
-
-    <script>
-        const STATE = { trinity: 'gemini', busy: false };
-
-        const MEMORY = JSON.parse(localStorage.getItem('omni_memory')) || {
-            gpt: { key: '', url: '', models: [] },
-            gpt5: { key: '', url: '', models: ['gpt-5-mini'] },
-            gemini: { key: '', url: '', models: [] },
-            claude: { key: '', url: '', models: [] }
+        // --- ICONS ---
+        const Icon = ({ name }) => {
+            const icons = {
+                menu: <path d="M3 12h18M3 6h18M3 18h18" />,
+                send: <path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" />,
+                settings: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>,
+                x: <path d="M18 6 6 18M6 6l12 12" />
+            };
+            return (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    {icons[name]}
+                </svg>
+            );
         };
 
-        window.onload = () => {
-            const lastMode = localStorage.getItem('omni_last_mode') || 'gemini';
-            setTrinity(lastMode);
-        };
+        const App = () => {
+            const [proxyUrl, setProxyUrl] = useState('https://your-worker.workers.dev/v1');
+            const [showMenu, setShowMenu] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
+            const [input, setInput] = useState('');
+            const [messages, setMessages] = useState([]);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [mode, setMode] = useState('broadcast');
 
-        function setTrinity(mode) {
-            if (STATE.trinity) saveToMemory();
-
-            STATE.trinity = mode;
-            localStorage.setItem('omni_last_mode', mode);
-            
-            document.querySelectorAll('.trinity-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${mode}`).classList.add('active');
-            document.body.className = `mode-${mode}`;
-
-            const data = MEMORY[mode];
-            document.getElementById('api-key').value = data.key || '';
-            document.getElementById('api-url').value = data.url || '';
-            populateDropdown(data.models);
-        }
-
-        function saveToMemory() {
-            const mode = STATE.trinity;
-            MEMORY[mode].key = document.getElementById('api-key').value;
-            MEMORY[mode].url = document.getElementById('api-url').value;
-            localStorage.setItem('omni_memory', JSON.stringify(MEMORY));
-        }
-
-        function populateDropdown(modelList) {
-            const select = document.getElementById('model-select');
-            const currentVal = select.value || localStorage.getItem(`omni_model_${STATE.trinity}`);
-            select.innerHTML = '';
-            
-            if (!modelList || modelList.length === 0) {
-                select.innerHTML = '<option value="">(Sync Required)</option>';
-                return;
-            }
-
-            modelList.forEach(id => {
-                const opt = document.createElement('option');
-                opt.value = id;
-                opt.textContent = id;
-                select.appendChild(opt);
+            const [slots, setSlots] = useState({
+                slot1: 'nemotron-4-340b',
+                slot2: 'deepseek-3.1',
+                slot3: 'llama-3.1-405b',
+                slot4: 'mistral-large-3'
             });
 
-            if (currentVal && modelList.includes(currentVal)) {
-                select.value = currentVal;
-            }
-        }
+            const scrollRef = useRef(null);
 
-        async function syncModels() {
-            const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
-            const key = document.getElementById('api-key').value.trim();
-            const btn = document.getElementById('sync-btn');
-            
-            if (!url || !key) {
-                addMsg('system', '⚠ Configuration Required: URL and Key needed.');
-                return;
-            }
+            const COUNCIL_META = {
+                'nemotron-4-340b': { name: 'Lead Architect', color: 'text-indigo-400' },
+                'deepseek-3.1': { name: 'Secondary Architect', color: 'text-cyan-400' },
+                'llama-3.1-405b': { name: 'The Oracle', color: 'text-purple-400' },
+                'mistral-large-3': { name: 'The Dissenter', color: 'text-orange-400' }
+            };
 
-            btn.innerText = "FETCHING...";
-            btn.disabled = true;
+            useEffect(() => {
+                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages, isProcessing]);
 
-            try {
-                const res = await fetch(`${url}/models`, {
-                    headers: { 'Authorization': `Bearer ${key}` }
-                });
-                const data = await res.json();
-                
-                let modelIds = [];
-                if (Array.isArray(data)) {
-                    modelIds = data.map(m => m.id || m);
-                } else if (data.data && Array.isArray(data.data)) {
-                    modelIds = data.data.map(m => m.id || m);
+            const handleSend = async () => {
+                if (!input.trim() || isProcessing) return;
+
+                const userMsg = { role: 'user', content: input, id: Date.now() };
+                setMessages(prev => [...prev, userMsg]);
+                const currentInput = input;
+                setInput('');
+                setIsProcessing(true);
+
+                const targets = mode === 'broadcast' ? Object.values(slots) : [slots.slot1];
+
+                try {
+                    await Promise.all(targets.map(async (modelId) => {
+                        try {
+                            const res = await fetch(`${proxyUrl}/chat/completions`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    model: modelId,
+                                    messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
+                                })
+                            });
+                            const data = await res.json();
+                            setMessages(prev => [...prev, {
+                                role: 'assistant',
+                                sender: modelId,
+                                content: data.choices?.[0]?.message?.content || "No response.",
+                                id: Math.random()
+                            }]);
+                        } catch (e) {
+                            setMessages(prev => [...prev, { role: 'assistant', sender: modelId, content: "Connection Error.", id: Math.random() }]);
+                        }
+                    }));
+                } finally {
+                    setIsProcessing(false);
                 }
+            };
 
-                if (modelIds.length > 0) {
-                    MEMORY[STATE.trinity].models = modelIds;
-                    saveToMemory();
-                    populateDropdown(modelIds);
-                    addMsg('system', `📡 ${STATE.trinity.toUpperCase()} Sync: ${modelIds.length} models found.`);
-                } else {
-                    throw new Error("Empty model list.");
-                }
-            } catch (err) {
-                addMsg('system', `❌ Sync Error: ${err.message}.`);
-            } finally {
-                btn.innerText = "SYNC";
-                btn.disabled = false;
-            }
-        }
+            return (
+                <div className="flex flex-col h-screen overflow-hidden">
+                    {/* Header */}
+                    <header className="h-14 bg-[#0d0d10] border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-50">
+                        <button onClick={() => setShowMenu(true)} className="p-2 -ml-2 text-indigo-500"><Icon name="menu" /></button>
+                        <div className="flex flex-col items-center">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Trinity V22</span>
+                            <span className="text-[7px] font-bold text-indigo-500 uppercase tracking-widest">Active Spine Control</span>
+                        </div>
+                        <button onClick={() => setShowSettings(!showSettings)} className="p-2 -mr-2 text-slate-600"><Icon name="settings" /></button>
+                    </header>
 
-        async function sendMessage() {
-            saveToMemory();
-            const text = document.getElementById('user-input').value.trim();
-            const key = document.getElementById('api-key').value.trim();
-            const url = document.getElementById('api-url').value.trim().replace(/\/$/, '');
-            const model = document.getElementById('model-select').value;
+                    {/* Settings Panel */}
+                    {showSettings && (
+                        <div className="bg-[#0d0d10] p-4 border-b border-white/10 animate-in slide-in-from-top">
+                            <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block">Proxy Endpoint</label>
+                            <input value={proxyUrl} onChange={e => setProxyUrl(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-mono text-indigo-400 outline-none" />
+                        </div>
+                    )}
 
-            if (!text || STATE.busy) return;
-            if (!key || !url || !model) {
-                addMsg('system', '⚠ Bridge Error: Missing Config.');
-                return;
-            }
+                    {/* Chat Area */}
+                    <main className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
+                        {messages.length === 0 && (
+                            <div className="h-full flex flex-col items-center justify-center opacity-10 scale-90">
+                                <h2 className="text-xl font-black uppercase tracking-[0.5em]">Ready</h2>
+                            </div>
+                        )}
+                        {messages.map(msg => (
+                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[92%] p-3.5 rounded-2xl border ${msg.role === 'user' ? 'bg-indigo-600 border-indigo-400 shadow-lg' : 'bg-[#111114] border-white/5 text-slate-300'}`}>
+                                    {msg.role === 'assistant' && (
+                                        <div className={`text-[8px] font-black uppercase mb-1.5 ${COUNCIL_META[msg.sender]?.color || 'text-indigo-400'}`}>
+                                            {COUNCIL_META[msg.sender]?.name || msg.sender}
+                                        </div>
+                                    )}
+                                    <p className="text-sm leading-relaxed tracking-tight">{msg.content}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {isProcessing && <div className="text-[8px] font-black text-indigo-500 animate-pulse uppercase tracking-widest">Deliberating...</div>}
+                        <div ref={scrollRef} />
+                    </main>
 
-            localStorage.setItem(`omni_model_${STATE.trinity}`, model);
+                    {/* Input Block */}
+                    <footer className="bg-[#0d0d10] border-t border-white/5 p-3 pb-safe shrink-0">
+                        <div className="flex justify-center gap-2 mb-3">
+                            {['broadcast', 'targeted'].map(m => (
+                                <button key={m} onClick={() => setMode(m)} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all ${mode === m ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600'}`}>{m}</button>
+                            ))}
+                        </div>
+                        <div className="flex items-end gap-2 bg-black border border-white/10 rounded-3xl p-2 pr-2">
+                            <textarea 
+                                value={input} 
+                                onChange={e => setInput(e.target.value)} 
+                                rows="1"
+                                placeholder="Command the Council..."
+                                className="flex-1 bg-transparent p-3 text-sm text-slate-200 outline-none resize-none max-h-32"
+                            />
+                            <button onClick={handleSend} disabled={!input.trim()} className="w-11 h-11 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg active:scale-90 disabled:opacity-20 shrink-0">
+                                <Icon name="send" />
+                            </button>
+                        </div>
+                    </footer>
 
-            STATE.busy = true;
-            document.getElementById('user-input').value = '';
-            document.getElementById('user-input').style.height = 'auto';
-            addMsg('user', text);
-            const botMsg = addMsg('bot', 'Awaiting Bridge...');
-            const contentDiv = botMsg.querySelector('.content');
+                    {/* Sidebar Menu */}
+                    {showMenu && (
+                        <div className="fixed inset-0 z-50 flex animate-in fade-in duration-300">
+                            <div className="bg-[#0d0d10] w-[80%] h-full p-6 shadow-2xl flex flex-col gap-6 animate-in slide-in-from-left">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs font-black text-slate-500 uppercase">V22 Council</span>
+                                    <button onClick={() => setShowMenu(false)} className="p-2"><Icon name="x" /></button>
+                                </div>
+                                {[1, 2, 3, 4].map(num => (
+                                    <div key={num} className="space-y-2">
+                                        <span className="text-[9px] font-black text-slate-600 uppercase">Seat {num}</span>
+                                        <div className="council-card p-4 rounded-2xl">
+                                            <select 
+                                                value={slots[`slot${num}`]} 
+                                                onChange={e => setSlots({...slots, [`slot${num}`]: e.target.value})}
+                                                className="bg-transparent w-full text-xs font-bold text-slate-300 outline-none appearance-none"
+                                            >
+                                                {Object.keys(COUNCIL_META).map(id => <option key={id} value={id} className="bg-[#0d0d10]">{id}</option>)}
+                                            </select>
+                                            <div className={`text-[7px] font-black mt-1 uppercase ${COUNCIL_META[slots[`slot${num}`]]?.color}`}>
+                                                {COUNCIL_META[slots[`slot${num}`]]?.name}
+                                            </status>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button onClick={() => setShowMenu(false)} className="mt-auto bg-indigo-600 p-4 rounded-2xl font-black uppercase text-xs tracking-widest">Apply Config</button>
+                            </div>
+                            <div className="flex-1 bg-black/70 backdrop-blur-sm" onClick={() => setShowMenu(false)} />
+                        </div>
+                    )}
+                </div>
+            );
+        };
 
-            try {
-                const res = await fetch(`${url}/chat/completions`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                    body: JSON.stringify({ model: model, messages: [{role: 'user', content: text}] })
-                });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error.message);
-                contentDiv.innerHTML = marked.parse(data.choices[0].message.content);
-            } catch (err) { 
-                contentDiv.innerHTML = `❌ Proxy Error: ${err.message}`;
-            }
-            STATE.busy = false;
-        }
-
-        function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-        function addMsg(role, text) {
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            div.innerHTML = `<div class="role-badge">${role.toUpperCase()}</div><div class="content">${marked.parse(text)}</div>`;
-            const scroller = document.getElementById('chat-scroller');
-            scroller.appendChild(div);
-            scroller.scrollTop = scroller.scrollHeight;
-            return div;
-        }
-        function clearConsole() { document.getElementById('chat-scroller').innerHTML = ''; }
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
-
-
