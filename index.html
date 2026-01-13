@@ -3,154 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trinity Arena v1.2</title>
+    <title>Trinity Arena v1.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #0f172a; color: #f8fafc; font-family: ui-sans-serif, system-ui, sans-serif; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .output-card { animation: slideIn 0.3s ease-out; border-left-width: 4px; }
+        body { background: #020617; color: #f8fafc; font-family: ui-sans-serif, system-ui; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .glow-blue { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+        .output-card { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        select, input, textarea { outline: none; transition: border-color 0.2s; }
-        select:focus, input:focus { border-color: #3b82f6 !important; }
     </style>
 </head>
-<body class="p-4 md:p-8 min-h-screen">
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-8 flex justify-between items-center">
+<body class="p-4 md:p-10 min-h-screen flex flex-col items-center">
+    <div class="w-full max-w-3xl">
+        <header class="mb-10 flex justify-between items-end">
             <div>
-                <h1 class="text-3xl font-black text-blue-400 tracking-tight">TRINITY ARENA</h1>
-                <p class="text-xs text-slate-500 font-mono">Neural Proxy // Hardcoded Registry</p>
+                <h1 class="text-4xl font-black text-blue-500 tracking-tighter italic">TRINITY ARENA</h1>
+                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em]">Neural Proxy // Mobile-Optimized</p>
             </div>
-            <button onclick="toggleConfig()" class="p-2 glass rounded-lg hover:bg-slate-700 transition">⚙️ Settings</button>
+            <button onclick="toggleSettings()" class="text-xs bg-slate-800 px-4 py-2 rounded-full border border-slate-700 hover:bg-slate-700 transition">⚙️ CONFIG</button>
         </header>
 
-        <div id="configPanel" class="hidden glass p-6 rounded-2xl mb-6 border-blue-500/30 border">
-            <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><span>🔌</span> Connection</h2>
+        <div id="settings" class="hidden glass p-6 rounded-3xl mb-6 border-blue-500/30 glow-blue">
+            <h2 class="text-sm font-bold mb-4 text-blue-400">ENDPOINT CONFIGURATION</h2>
             <div class="space-y-4">
-                <input id="workerUrl" type="text" placeholder="https://cool-hobby.nvidia-nim.workers.dev" class="w-full p-2 rounded bg-slate-900 border border-slate-700 text-sm">
-                <input id="workerKey" type="password" placeholder="Access Key (Optional)" class="w-full p-2 rounded bg-slate-900 border border-slate-700 text-sm">
-                <p class="text-[10px] text-slate-500 italic">Settings are saved locally in your browser.</p>
+                <input id="workerUrl" type="text" placeholder="https://your-worker.workers.dev" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm outline-none focus:border-blue-500">
+                <input id="workerKey" type="password" placeholder="NVIDIA NIM / Worker Key" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm outline-none focus:border-blue-500">
             </div>
         </div>
 
-        <div class="glass p-6 rounded-2xl mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="space-y-4">
-                <label class="block text-xs font-black text-blue-400 uppercase tracking-widest">Primary Model</label>
-                <select id="model1" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 font-semibold">
-                    <option value="llama-4-maverick">Llama 4 Maverick</option>
-                    <option value="llama-4-scout">Llama 4 Scout</option>
-                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3 (NIM)</option>
-                    <option value="deepseek-ai/deepseek-r1">DeepSeek R1 (Reasoning)</option>
-                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B</option>
-                    <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron-4 340B Suite</option>
-                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                </select>
+        <div class="glass p-6 rounded-3xl mb-6 border-white/5">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex gap-4">
+                    <button onclick="setMode('help')" id="mode-help" class="text-xs font-black px-4 py-2 rounded-full transition-all">🤝 CONSENSUS</button>
+                    <button onclick="setMode('debate')" id="mode-debate" class="text-xs font-black px-4 py-2 rounded-full transition-all">⚔️ DEBATE</button>
+                </div>
+                <button onclick="syncModels()" id="syncBtn" class="text-[10px] bg-blue-600 px-3 py-1 rounded-full font-bold uppercase hover:bg-blue-400 transition">🔄 Sync Registry</button>
             </div>
-            <div class="space-y-4">
-                <label class="block text-xs font-black text-red-400 uppercase tracking-widest">Secondary Model</label>
-                <select id="model2" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 font-semibold">
-                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3 (NIM)</option>
-                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                    <option value="openai/gpt-4o">GPT-4o</option>
-                    <option value="llama-4-maverick">Llama 4 Maverick</option>
-                    <option value="deepseek-ai/deepseek-r1">DeepSeek R1</option>
-                </select>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold opacity-40 ml-2">PRIMARY NODE</label>
+                    <select id="model1" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-sm font-bold outline-none cursor-pointer"></select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[10px] font-bold opacity-40 ml-2">SECONDARY NODE</label>
+                    <select id="model2" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-sm font-bold outline-none cursor-pointer"></select>
+                </div>
             </div>
         </div>
 
-        <div class="flex gap-2 mb-6">
-            <button onclick="setMode('help')" id="btn-help" class="flex-1 py-3 rounded-xl font-bold transition-all border border-white/5">🤝 Helping Mode</button>
-            <button onclick="setMode('debate')" id="btn-debate" class="flex-1 py-3 rounded-xl font-bold transition-all border border-white/5">⚔️ Debate Mode</button>
+        <div class="glass p-4 rounded-3xl mb-8 border-white/10 glow-blue">
+            <textarea id="userInput" placeholder="Awaiting neural instructions..." class="w-full h-32 bg-transparent p-2 text-lg outline-none resize-none placeholder:opacity-20"></textarea>
+            <button onclick="initiateSequence()" id="execBtn" class="w-full mt-4 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-black text-xl tracking-widest shadow-xl shadow-blue-900/20 active:scale-[0.98] transition-all">INITIATE SEQUENCE</button>
         </div>
 
-        <div class="glass p-4 rounded-2xl mb-6">
-            <textarea id="userInput" placeholder="Code help or Mafia debate topic..." class="w-full h-32 p-4 bg-transparent border-none focus:ring-0 text-lg resize-none"></textarea>
-            <button onclick="runArena()" class="w-full mt-4 bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black text-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all active:scale-95">EXECUTE NEURAL ROUTE</button>
-        </div>
-
-        <div id="outputArea" class="space-y-6 pb-20"></div>
+        <div id="output" class="space-y-6 pb-20"></div>
     </div>
 
     <script>
         let currentMode = 'help';
         
-        // Load settings
-        document.getElementById('workerUrl').value = localStorage.getItem('trinity_url') || 'https://cool-hobby.nvidia-nim.workers.dev';
-        document.getElementById('workerKey').value = localStorage.getItem('trinity_key') || '';
+        // Load persistency
+        document.getElementById('workerUrl').value = localStorage.getItem('t_url') || '';
+        document.getElementById('workerKey').value = localStorage.getItem('t_key') || '';
         setMode('help');
 
-        function toggleConfig() { document.getElementById('configPanel').classList.toggle('hidden'); }
+        function toggleSettings() { document.getElementById('settings').classList.toggle('hidden'); }
 
-        function setMode(mode) {
-            currentMode = mode;
-            const h = document.getElementById('btn-help');
-            const d = document.getElementById('btn-debate');
-            if(mode === 'help') {
-                h.className = "flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white shadow-lg";
-                d.className = "flex-1 py-3 rounded-xl font-bold bg-slate-800 text-slate-400";
+        function setMode(m) {
+            currentMode = m;
+            const h = document.getElementById('mode-help');
+            const d = document.getElementById('mode-debate');
+            if(m === 'help') {
+                h.className = "text-xs font-black px-4 py-2 rounded-full bg-blue-600 text-white";
+                d.className = "text-xs font-black px-4 py-2 rounded-full bg-slate-800 text-slate-500";
             } else {
-                d.className = "flex-1 py-3 rounded-xl font-bold bg-red-600 text-white shadow-lg";
-                h.className = "flex-1 py-3 rounded-xl font-bold bg-slate-800 text-slate-400";
+                d.className = "text-xs font-black px-4 py-2 rounded-full bg-red-600 text-white";
+                h.className = "text-xs font-black px-4 py-2 rounded-full bg-slate-800 text-slate-500";
             }
         }
 
-        async function askAI(model, prompt, system = "") {
-            const baseUrl = document.getElementById('workerUrl').value.replace(/\/$/, "");
-            const url = `${baseUrl}/v1/chat/completions`;
-            const key = document.getElementById('workerKey').value;
+        async function syncModels() {
+            const btn = document.getElementById('syncBtn');
+            const url = document.getElementById('workerUrl').value.replace(/\/$/, "") + "/v1/models";
+            btn.innerText = "⏳ SYNCING...";
             
-            localStorage.setItem('trinity_url', baseUrl);
-            localStorage.setItem('trinity_key', key);
+            try {
+                const res = await fetch(url, {
+                    headers: { "Authorization": `Bearer ${document.getElementById('workerKey').value}` }
+                });
+                const json = await res.json();
+                const m1 = document.getElementById('model1');
+                const m2 = document.getElementById('model2');
+                [m1, m2].forEach(s => {
+                    s.innerHTML = "";
+                    json.data.forEach(m => s.add(new Option(m.id, m.id)));
+                });
+                btn.innerText = "✅ SYNCED";
+            } catch (e) {
+                btn.innerText = "❌ FAILED";
+                alert("CORS or URL Error. Check Console.");
+            }
+        }
 
+        async function apiCall(model, prompt, sys = "") {
+            const url = document.getElementById('workerUrl').value.replace(/\/$/, "") + "/v1/chat/completions";
             const res = await fetch(url, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${document.getElementById('workerKey').value}`
+                },
                 body: JSON.stringify({
                     model: model,
-                    messages: [{ role: "system", content: system }, { role: "user", content: prompt }]
+                    messages: [{role: "system", content: sys}, {role: "user", content: prompt}]
                 })
             });
             const data = await res.json();
             return data.choices[0].message.content;
         }
 
-        async function runArena() {
-            const input = document.getElementById('userInput').value;
+        async function initiateSequence() {
+            const out = document.getElementById('output');
+            const prompt = document.getElementById('userInput').value;
             const m1 = document.getElementById('model1').value;
             const m2 = document.getElementById('model2').value;
-            const out = document.getElementById('outputArea');
-            if(!input) return alert("Enter a prompt!");
+            
+            if(!prompt) return;
+            localStorage.setItem('t_url', document.getElementById('workerUrl').value);
+            localStorage.setItem('t_key', document.getElementById('workerKey').value);
 
-            out.innerHTML = `<div class="text-center py-10 opacity-50 font-mono animate-pulse text-blue-400 text-sm tracking-widest">INITIALIZING TRINITY OVERRIDE...</div>`;
+            out.innerHTML = "<div class='text-center py-10 opacity-30 animate-pulse'>ROUTING NEURAL PATHWAYS...</div>";
 
             try {
-                if (currentMode === 'help') {
-                    const ans1 = await askAI(m1, input, "Provide a technical solution.");
-                    renderCard(m1, ans1, "Primary Logic", "border-blue-500 bg-blue-500/5");
-                    
-                    const ans2 = await askAI(m2, `Review and improve this: ${ans1}`, "Optimization Mode. Clean up the logic.");
-                    renderCard(m2, ans2, "Final Polish", "border-green-500 bg-green-500/5");
+                if(currentMode === 'help') {
+                    const r1 = await apiCall(m1, prompt, "Provide a technical solution.");
+                    renderCard(m1, r1, "Architect Draft", "border-blue-500 bg-blue-500/5");
+                    const r2 = await apiCall(m2, `Review this: ${r1}`, "Critique and refine the logic.");
+                    renderCard(m2, r2, "Refined Consensus", "border-green-500 bg-green-500/5");
                 } else {
-                    const ans1 = await askAI(m1, input, "Take a PRO stance. Be persuasive.");
-                    renderCard(m1, ans1, "Argument: PRO", "border-blue-500 bg-blue-500/5");
-
-                    const ans2 = await askAI(m2, input, "Take a CON stance. Find flaws in the logic.");
-                    renderCard(m2, ans2, "Argument: CON", "border-red-500 bg-red-500/5");
-
-                    const judge = await askAI("deepseek-ai/deepseek-r1", `Judge this debate:\nPro: ${ans1}\nCon: ${ans2}`, "Neutral Arbiter. Pick a winner.");
-                    renderCard("DEEPSEEK R1 (JUDGE)", judge, "Verdict", "border-purple-500 bg-purple-500/10");
+                    const r1 = await apiCall(m1, prompt, "Argue FOR the topic.");
+                    renderCard(m1, r1, "Argument: PRO", "border-blue-500 bg-blue-500/5");
+                    const r2 = await apiCall(m2, prompt, "Argue AGAINST the topic.");
+                    renderCard(m2, r2, "Argument: CON", "border-red-500 bg-red-500/5");
                 }
-            } catch (err) {
-                out.innerHTML = `<div class="p-4 bg-red-900/20 border border-red-500 rounded-xl text-red-400 text-sm">Error: ${err.message}<br>Check if your Worker is online and CORS is enabled.</div>`;
+            } catch (e) {
+                out.innerHTML = `<div class='p-4 text-red-400 bg-red-900/20 border border-red-500 rounded-2xl'>ERROR: ${e.message}</div>`;
             }
         }
 
         function renderCard(model, text, label, style) {
-            if(document.querySelector('.animate-pulse')) document.getElementById('outputArea').innerHTML = '';
+            if(document.querySelector('.animate-pulse')) document.getElementById('output').innerHTML = '';
             const div = document.createElement('div');
-            div.className = `output-card glass p-6 rounded-2xl ${style}`;
-            div.innerHTML = `<h3 class="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-4">${label} // ${model}</h3><div class="whitespace-pre-wrap text-slate-200 leading-relaxed">${text}</div>`;
-            document.getElementById('outputArea').appendChild(div);
+            div.className = `output-card glass p-6 rounded-3xl border-l-4 ${style}`;
+            div.innerHTML = `<div class="text-[9px] font-black opacity-40 mb-2 tracking-[0.2em] uppercase">${label} // ${model}</div><div class="text-sm leading-relaxed whitespace-pre-wrap">${text}</div>`;
+            document.getElementById('output').appendChild(div);
         }
     </script>
 </body>
