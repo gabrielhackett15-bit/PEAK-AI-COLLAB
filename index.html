@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trinity Arena v1.3</title>
+    <title>Trinity Arena v1.3 // Parallel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; color: #f8fafc; font-family: ui-sans-serif, system-ui; }
@@ -14,150 +14,114 @@
     </style>
 </head>
 <body class="p-4 md:p-10 min-h-screen flex flex-col items-center">
-    <div class="w-full max-w-3xl">
-        <header class="mb-10 flex justify-between items-end">
+    <div class="w-full max-w-4xl">
+        <header class="mb-8 flex justify-between items-end">
             <div>
                 <h1 class="text-4xl font-black text-blue-500 tracking-tighter italic">TRINITY ARENA</h1>
-                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em]">Neural Proxy // Mobile-Optimized</p>
+                <p class="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em]">v1.3 Parallel Neural Routing</p>
             </div>
-            <button onclick="toggleSettings()" class="text-xs bg-slate-800 px-4 py-2 rounded-full border border-slate-700 hover:bg-slate-700 transition">⚙️ CONFIG</button>
+            <button onclick="toggleSettings()" class="text-xs bg-slate-800 px-4 py-2 rounded-full border border-slate-700">⚙️ CONFIG</button>
         </header>
 
-        <div id="settings" class="hidden glass p-6 rounded-3xl mb-6 border-blue-500/30 glow-blue">
-            <h2 class="text-sm font-bold mb-4 text-blue-400">ENDPOINT CONFIGURATION</h2>
-            <div class="space-y-4">
-                <input id="workerUrl" type="text" placeholder="https://your-worker.workers.dev" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm outline-none focus:border-blue-500">
-                <input id="workerKey" type="password" placeholder="NVIDIA NIM / Worker Key" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm outline-none focus:border-blue-500">
-            </div>
+        <div id="settings" class="hidden glass p-6 rounded-3xl mb-6 border-blue-500/30">
+            <input id="workerUrl" type="text" placeholder="https://your-worker.workers.dev" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm mb-4">
+            <input id="workerKey" type="password" placeholder="NVIDIA NIM API Key" class="w-full p-3 rounded-xl bg-slate-900 border border-slate-800 text-sm">
         </div>
 
         <div class="glass p-6 rounded-3xl mb-6 border-white/5">
             <div class="flex justify-between items-center mb-6">
-                <div class="flex gap-4">
-                    <button onclick="setMode('help')" id="mode-help" class="text-xs font-black px-4 py-2 rounded-full transition-all">🤝 CONSENSUS</button>
-                    <button onclick="setMode('debate')" id="mode-debate" class="text-xs font-black px-4 py-2 rounded-full transition-all">⚔️ DEBATE</button>
+                <div class="flex gap-2">
+                    <button onclick="setMode('help')" id="mode-help" class="text-[10px] font-black px-4 py-2 rounded-full transition-all">CONSENSUS</button>
+                    <button onclick="setMode('debate')" id="mode-debate" class="text-[10px] font-black px-4 py-2 rounded-full transition-all">DEBATE</button>
                 </div>
-                <button onclick="syncModels()" id="syncBtn" class="text-[10px] bg-blue-600 px-3 py-1 rounded-full font-bold uppercase hover:bg-blue-400 transition">🔄 Sync Registry</button>
+                <button onclick="syncModels()" id="syncBtn" class="text-[10px] bg-blue-600 px-4 py-2 rounded-full font-black uppercase">🔄 Sync Registry</button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold opacity-40 ml-2">PRIMARY NODE</label>
-                    <select id="model1" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-sm font-bold outline-none cursor-pointer"></select>
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] font-bold opacity-40 ml-2">SECONDARY NODE</label>
-                    <select id="model2" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-sm font-bold outline-none cursor-pointer"></select>
-                </div>
+                <select id="model1" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-xs font-bold"></select>
+                <select id="model2" class="w-full bg-slate-800 p-4 rounded-2xl border border-slate-700 text-xs font-bold"></select>
             </div>
         </div>
 
-        <div class="glass p-4 rounded-3xl mb-8 border-white/10 glow-blue">
-            <textarea id="userInput" placeholder="Awaiting neural instructions..." class="w-full h-32 bg-transparent p-2 text-lg outline-none resize-none placeholder:opacity-20"></textarea>
-            <button onclick="initiateSequence()" id="execBtn" class="w-full mt-4 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-black text-xl tracking-widest shadow-xl shadow-blue-900/20 active:scale-[0.98] transition-all">INITIATE SEQUENCE</button>
+        <div class="glass p-4 rounded-3xl mb-8 glow-blue">
+            <textarea id="userInput" placeholder="Submit prompt..." class="w-full h-24 bg-transparent p-2 text-lg outline-none resize-none"></textarea>
+            <button onclick="initiateSequence()" id="execBtn" class="w-full mt-4 bg-blue-600 py-4 rounded-2xl font-black text-xl">INITIATE SEQUENCE</button>
         </div>
 
-        <div id="output" class="space-y-6 pb-20"></div>
+        <div id="output" class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20"></div>
     </div>
 
     <script>
         let currentMode = 'help';
-        
-        // Load persistency
         document.getElementById('workerUrl').value = localStorage.getItem('t_url') || '';
         document.getElementById('workerKey').value = localStorage.getItem('t_key') || '';
         setMode('help');
 
         function toggleSettings() { document.getElementById('settings').classList.toggle('hidden'); }
-
         function setMode(m) {
             currentMode = m;
-            const h = document.getElementById('mode-help');
-            const d = document.getElementById('mode-debate');
-            if(m === 'help') {
-                h.className = "text-xs font-black px-4 py-2 rounded-full bg-blue-600 text-white";
-                d.className = "text-xs font-black px-4 py-2 rounded-full bg-slate-800 text-slate-500";
-            } else {
-                d.className = "text-xs font-black px-4 py-2 rounded-full bg-red-600 text-white";
-                h.className = "text-xs font-black px-4 py-2 rounded-full bg-slate-800 text-slate-500";
-            }
+            const h = document.getElementById('mode-help'); const d = document.getElementById('mode-debate');
+            h.className = m === 'help' ? "text-[10px] font-black px-4 py-2 rounded-full bg-blue-600" : "text-[10px] font-black px-4 py-2 rounded-full bg-slate-800 text-slate-500";
+            d.className = m === 'debate' ? "text-[10px] font-black px-4 py-2 rounded-full bg-red-600" : "text-[10px] font-black px-4 py-2 rounded-full bg-slate-800 text-slate-500";
         }
 
         async function syncModels() {
-            const btn = document.getElementById('syncBtn');
             const url = document.getElementById('workerUrl').value.replace(/\/$/, "") + "/v1/models";
-            btn.innerText = "⏳ SYNCING...";
-            
             try {
-                const res = await fetch(url, {
-                    headers: { "Authorization": `Bearer ${document.getElementById('workerKey').value}` }
-                });
+                const res = await fetch(url, { headers: { "Authorization": `Bearer ${document.getElementById('workerKey').value}` } });
                 const json = await res.json();
-                const m1 = document.getElementById('model1');
-                const m2 = document.getElementById('model2');
-                [m1, m2].forEach(s => {
+                [document.getElementById('model1'), document.getElementById('model2')].forEach(s => {
                     s.innerHTML = "";
                     json.data.forEach(m => s.add(new Option(m.id, m.id)));
                 });
-                btn.innerText = "✅ SYNCED";
-            } catch (e) {
-                btn.innerText = "❌ FAILED";
-                alert("CORS or URL Error. Check Console.");
-            }
+            } catch (e) { alert("CORS Error. Ensure 'CORS Unblock' is ON."); }
         }
 
-        async function apiCall(model, prompt, sys = "") {
+        function createCard(id, model, label, color) {
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = `output-card glass p-6 rounded-3xl border-l-4 ${color}`;
+            div.innerHTML = `<div class="text-[9px] font-black opacity-40 mb-2 uppercase">${label} // ${model}</div><div class="content text-sm leading-relaxed animate-pulse">THINKING...</div>`;
+            document.getElementById('output').appendChild(div);
+            return div;
+        }
+
+        async function apiCall(model, prompt, sys) {
             const url = document.getElementById('workerUrl').value.replace(/\/$/, "") + "/v1/chat/completions";
             const res = await fetch(url, {
                 method: "POST",
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${document.getElementById('workerKey').value}`
-                },
-                body: JSON.stringify({
-                    model: model,
-                    messages: [{role: "system", content: sys}, {role: "user", content: prompt}]
-                })
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${document.getElementById('workerKey').value}` },
+                body: JSON.stringify({ model, messages: [{role: "system", content: sys}, {role: "user", content: prompt}] })
             });
             const data = await res.json();
             return data.choices[0].message.content;
         }
 
         async function initiateSequence() {
-            const out = document.getElementById('output');
             const prompt = document.getElementById('userInput').value;
             const m1 = document.getElementById('model1').value;
             const m2 = document.getElementById('model2').value;
-            
             if(!prompt) return;
+
             localStorage.setItem('t_url', document.getElementById('workerUrl').value);
             localStorage.setItem('t_key', document.getElementById('workerKey').value);
+            document.getElementById('output').innerHTML = "";
 
-            out.innerHTML = "<div class='text-center py-10 opacity-30 animate-pulse'>ROUTING NEURAL PATHWAYS...</div>";
+            // Create placeholder cards immediately
+            const card1 = createCard("c1", m1, currentMode === 'help' ? "Architect" : "PRO", "border-blue-500");
+            const card2 = createCard("c2", m2, currentMode === 'help' ? "Auditor" : "CON", "border-red-500");
 
-            try {
-                if(currentMode === 'help') {
-                    const r1 = await apiCall(m1, prompt, "Provide a technical solution.");
-                    renderCard(m1, r1, "Architect Draft", "border-blue-500 bg-blue-500/5");
-                    const r2 = await apiCall(m2, `Review this: ${r1}`, "Critique and refine the logic.");
-                    renderCard(m2, r2, "Refined Consensus", "border-green-500 bg-green-500/5");
-                } else {
-                    const r1 = await apiCall(m1, prompt, "Argue FOR the topic.");
-                    renderCard(m1, r1, "Argument: PRO", "border-blue-500 bg-blue-500/5");
-                    const r2 = await apiCall(m2, prompt, "Argue AGAINST the topic.");
-                    renderCard(m2, r2, "Argument: CON", "border-red-500 bg-red-500/5");
-                }
-            } catch (e) {
-                out.innerHTML = `<div class='p-4 text-red-400 bg-red-900/20 border border-red-500 rounded-2xl'>ERROR: ${e.message}</div>`;
-            }
-        }
+            // PARALLEL CALLS: Both models fire at once
+            const calls = [
+                apiCall(m1, prompt, currentMode === 'help' ? "Be constructive." : "Argue FOR."),
+                apiCall(m2, prompt, currentMode === 'help' ? "Be critical." : "Argue AGAINST.")
+            ];
 
-        function renderCard(model, text, label, style) {
-            if(document.querySelector('.animate-pulse')) document.getElementById('output').innerHTML = '';
-            const div = document.createElement('div');
-            div.className = `output-card glass p-6 rounded-3xl border-l-4 ${style}`;
-            div.innerHTML = `<div class="text-[9px] font-black opacity-40 mb-2 tracking-[0.2em] uppercase">${label} // ${model}</div><div class="text-sm leading-relaxed whitespace-pre-wrap">${text}</div>`;
-            document.getElementById('output').appendChild(div);
+            const [r1, r2] = await Promise.all(calls);
+            card1.querySelector('.content').classList.remove('animate-pulse');
+            card1.querySelector('.content').innerText = r1;
+            card2.querySelector('.content').classList.remove('animate-pulse');
+            card2.querySelector('.content').innerText = r2;
         }
     </script>
 </body>
