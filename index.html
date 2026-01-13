@@ -2,210 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Trinity V22 Proxy</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trinity Arena v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #050507; color: #e2e8f0; margin: 0; overflow: hidden; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        .council-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease; }
-        .council-card:active { transform: scale(0.98); background: rgba(255,255,255,0.06); }
-        textarea { caret-color: #6366f1; }
+        body { background: #0f172a; color: #f8fafc; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .ai-card { border-left: 4px solid #3b82f6; }
+        .debate-card { border-left: 4px solid #ef4444; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="p-4 md:p-8">
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-blue-400">TRINITY ARENA</h1>
+            <p class="text-slate-400">Neural Proxy v12 Orchestrator</p>
+        </header>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        // --- ICONS ---
-        const Icon = ({ name }) => {
-            const icons = {
-                menu: <path d="M3 12h18M3 6h18M3 18h18" />,
-                send: <path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" />,
-                settings: <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>,
-                x: <path d="M18 6 6 18M6 6l12 12" />
-            };
-            return (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    {icons[name]}
-                </svg>
-            );
-        };
-
-        const App = () => {
-            const [proxyUrl, setProxyUrl] = useState('https://your-worker.workers.dev/v1');
-            const [showMenu, setShowMenu] = useState(false);
-            const [showSettings, setShowSettings] = useState(false);
-            const [input, setInput] = useState('');
-            const [messages, setMessages] = useState([]);
-            const [isProcessing, setIsProcessing] = useState(false);
-            const [mode, setMode] = useState('broadcast');
-
-            const [slots, setSlots] = useState({
-                slot1: 'nemotron-4-340b',
-                slot2: 'deepseek-3.1',
-                slot3: 'llama-3.1-405b',
-                slot4: 'mistral-large-3'
-            });
-
-            const scrollRef = useRef(null);
-
-            const COUNCIL_META = {
-                'nemotron-4-340b': { name: 'Lead Architect', color: 'text-indigo-400' },
-                'deepseek-3.1': { name: 'Secondary Architect', color: 'text-cyan-400' },
-                'llama-3.1-405b': { name: 'The Oracle', color: 'text-purple-400' },
-                'mistral-large-3': { name: 'The Dissenter', color: 'text-orange-400' }
-            };
-
-            useEffect(() => {
-                scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages, isProcessing]);
-
-            const handleSend = async () => {
-                if (!input.trim() || isProcessing) return;
-
-                const userMsg = { role: 'user', content: input, id: Date.now() };
-                setMessages(prev => [...prev, userMsg]);
-                const currentInput = input;
-                setInput('');
-                setIsProcessing(true);
-
-                const targets = mode === 'broadcast' ? Object.values(slots) : [slots.slot1];
-
-                try {
-                    await Promise.all(targets.map(async (modelId) => {
-                        try {
-                            const res = await fetch(`${proxyUrl}/chat/completions`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    model: modelId,
-                                    messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content }))
-                                })
-                            });
-                            const data = await res.json();
-                            setMessages(prev => [...prev, {
-                                role: 'assistant',
-                                sender: modelId,
-                                content: data.choices?.[0]?.message?.content || "No response.",
-                                id: Math.random()
-                            }]);
-                        } catch (e) {
-                            setMessages(prev => [...prev, { role: 'assistant', sender: modelId, content: "Connection Error.", id: Math.random() }]);
-                        }
-                    }));
-                } finally {
-                    setIsProcessing(false);
-                }
-            };
-
-            return (
-                <div className="flex flex-col h-screen overflow-hidden">
-                    {/* Header */}
-                    <header className="h-14 bg-[#0d0d10] border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-50">
-                        <button onClick={() => setShowMenu(true)} className="p-2 -ml-2 text-indigo-500"><Icon name="menu" /></button>
-                        <div className="flex flex-col items-center">
-                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Trinity V22</span>
-                            <span className="text-[7px] font-bold text-indigo-500 uppercase tracking-widest">Active Spine Control</span>
-                        </div>
-                        <button onClick={() => setShowSettings(!showSettings)} className="p-2 -mr-2 text-slate-600"><Icon name="settings" /></button>
-                    </header>
-
-                    {/* Settings Panel */}
-                    {showSettings && (
-                        <div className="bg-[#0d0d10] p-4 border-b border-white/10 animate-in slide-in-from-top">
-                            <label className="text-[9px] font-black text-slate-500 uppercase mb-2 block">Proxy Endpoint</label>
-                            <input value={proxyUrl} onChange={e => setProxyUrl(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl p-3 text-xs font-mono text-indigo-400 outline-none" />
-                        </div>
-                    )}
-
-                    {/* Chat Area */}
-                    <main className="flex-1 overflow-y-auto p-4 space-y-6 scrollbar-hide">
-                        {messages.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center opacity-10 scale-90">
-                                <h2 className="text-xl font-black uppercase tracking-[0.5em]">Ready</h2>
-                            </div>
-                        )}
-                        {messages.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[92%] p-3.5 rounded-2xl border ${msg.role === 'user' ? 'bg-indigo-600 border-indigo-400 shadow-lg' : 'bg-[#111114] border-white/5 text-slate-300'}`}>
-                                    {msg.role === 'assistant' && (
-                                        <div className={`text-[8px] font-black uppercase mb-1.5 ${COUNCIL_META[msg.sender]?.color || 'text-indigo-400'}`}>
-                                            {COUNCIL_META[msg.sender]?.name || msg.sender}
-                                        </div>
-                                    )}
-                                    <p className="text-sm leading-relaxed tracking-tight">{msg.content}</p>
-                                </div>
-                            </div>
-                        ))}
-                        {isProcessing && <div className="text-[8px] font-black text-indigo-500 animate-pulse uppercase tracking-widest">Deliberating...</div>}
-                        <div ref={scrollRef} />
-                    </main>
-
-                    {/* Input Block */}
-                    <footer className="bg-[#0d0d10] border-t border-white/5 p-3 pb-safe shrink-0">
-                        <div className="flex justify-center gap-2 mb-3">
-                            {['broadcast', 'targeted'].map(m => (
-                                <button key={m} onClick={() => setMode(m)} className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all ${mode === m ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600'}`}>{m}</button>
-                            ))}
-                        </div>
-                        <div className="flex items-end gap-2 bg-black border border-white/10 rounded-3xl p-2 pr-2">
-                            <textarea 
-                                value={input} 
-                                onChange={e => setInput(e.target.value)} 
-                                rows="1"
-                                placeholder="Command the Council..."
-                                className="flex-1 bg-transparent p-3 text-sm text-slate-200 outline-none resize-none max-h-32"
-                            />
-                            <button onClick={handleSend} disabled={!input.trim()} className="w-11 h-11 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg active:scale-90 disabled:opacity-20 shrink-0">
-                                <Icon name="send" />
-                            </button>
-                        </div>
-                    </footer>
-
-                    {/* Sidebar Menu */}
-                    {showMenu && (
-                        <div className="fixed inset-0 z-50 flex animate-in fade-in duration-300">
-                            <div className="bg-[#0d0d10] w-[80%] h-full p-6 shadow-2xl flex flex-col gap-6 animate-in slide-in-from-left">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-xs font-black text-slate-500 uppercase">V22 Council</span>
-                                    <button onClick={() => setShowMenu(false)} className="p-2"><Icon name="x" /></button>
-                                </div>
-                                {[1, 2, 3, 4].map(num => (
-                                    <div key={num} className="space-y-2">
-                                        <span className="text-[9px] font-black text-slate-600 uppercase">Seat {num}</span>
-                                        <div className="council-card p-4 rounded-2xl">
-                                            <select 
-                                                value={slots[`slot${num}`]} 
-                                                onChange={e => setSlots({...slots, [`slot${num}`]: e.target.value})}
-                                                className="bg-transparent w-full text-xs font-bold text-slate-300 outline-none appearance-none"
-                                            >
-                                                {Object.keys(COUNCIL_META).map(id => <option key={id} value={id} className="bg-[#0d0d10]">{id}</option>)}
-                                            </select>
-                                            <div className={`text-[7px] font-black mt-1 uppercase ${COUNCIL_META[slots[`slot${num}`]]?.color}`}>
-                                                {COUNCIL_META[slots[`slot${num}`]]?.name}
-                                            </status>
-                                        </div>
-                                    </div>
-                                ))}
-                                <button onClick={() => setShowMenu(false)} className="mt-auto bg-indigo-600 p-4 rounded-2xl font-black uppercase text-xs tracking-widest">Apply Config</button>
-                            </div>
-                            <div className="flex-1 bg-black/70 backdrop-blur-sm" onClick={() => setShowMenu(false)} />
-                        </div>
-                    )}
+        <div class="glass p-6 rounded-2xl mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block mb-2 font-bold">Select Models</label>
+                <select id="model1" class="w-full p-2 rounded bg-slate-800 border border-slate-700 mb-2">
+                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Logic)</option>
+                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3 (Efficiency)</option>
+                    <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron 70B (Prose)</option>
+                </select>
+                <select id="model2" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
+                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3 (Efficiency)</option>
+                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Logic)</option>
+                    <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                </select>
+            </div>
+            <div>
+                <label class="block mb-2 font-bold">Execution Mode</label>
+                <div class="flex gap-2">
+                    <button onclick="setMode('help')" id="btn-help" class="flex-1 p-2 rounded bg-blue-600 font-bold">Helping</button>
+                    <button onclick="setMode('debate')" id="btn-debate" class="flex-1 p-2 rounded bg-slate-700 font-bold">Debate</button>
                 </div>
-            );
-        };
+            </div>
+        </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        <div class="glass p-4 rounded-2xl mb-6">
+            <textarea id="userInput" placeholder="Enter your prompt or debate topic..." class="w-full h-32 p-4 bg-transparent border-none focus:ring-0 text-lg resize-none"></textarea>
+            <button onclick="runArena()" class="w-full mt-4 bg-blue-500 hover:bg-blue-400 p-3 rounded-xl font-bold transition">INITIATE SEQUENCE</button>
+        </div>
+
+        <div id="outputArea" class="space-y-4"></div>
+    </div>
+
+    <script>
+        let currentMode = 'help';
+        const workerUrl = "https://your-worker.workers.dev/v1/chat/completions"; // UPDATE THIS
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-help').className = mode === 'help' ? 'flex-1 p-2 rounded bg-blue-600 font-bold' : 'flex-1 p-2 rounded bg-slate-700 font-bold';
+            document.getElementById('btn-debate').className = mode === 'debate' ? 'flex-1 p-2 rounded bg-red-600 font-bold' : 'flex-1 p-2 rounded bg-slate-700 font-bold';
+        }
+
+        async function askAI(model, prompt, system = "") {
+            const res = await fetch(workerUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer YOUR_KEY" },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [
+                        { role: "system", content: system },
+                        { role: "user", content: prompt }
+                    ]
+                })
+            });
+            const data = await res.json();
+            return data.choices[0].message.content;
+        }
+
+        async function runArena() {
+            const input = document.getElementById('userInput').value;
+            const m1 = document.getElementById('model1').value;
+            const m2 = document.getElementById('model2').value;
+            const output = document.getElementById('outputArea');
+            output.innerHTML = "<p class='text-center animate-pulse'>Computing Neural Pathways...</p>";
+
+            if (currentMode === 'help') {
+                const ans1 = await askAI(m1, input, "Provide a high-quality initial draft or solution.");
+                renderCard(m1, ans1, "Initial Solution");
+                
+                const ans2 = await askAI(m2, `Review this solution and improve it: ${ans1}`, "You are an expert editor. Enhance the provided code/text.");
+                renderCard(m2, ans2, "Collaborative Enhancement", "bg-green-900/20");
+            } else {
+                const ans1 = await askAI(m1, input, "Argue IN FAVOR of this topic or take a PRO-stance.");
+                renderCard(m1, ans1, "Argument: PRO", "bg-blue-900/20");
+
+                const ans2 = await askAI(m2, input, "Argue AGAINST this topic or take a CON-stance.");
+                renderCard(m2, ans2, "Argument: CON", "bg-red-900/20");
+
+                const judge = await askAI("meta-llama/llama-3.3-70b-instruct", `Debate Transcript:\nPro: ${ans1}\nCon: ${ans2}`, "You are a neutral Mafia judge. Decide who had the better logic.");
+                renderCard("JUDGE (Llama 70B)", judge, "Verdict", "bg-purple-900/40");
+            }
+        }
+
+        function renderCard(model, text, label, color = "bg-slate-800") {
+            const div = document.createElement('div');
+            div.className = `p-4 rounded-xl ${color} border border-white/10 shadow-xl`;
+            div.innerHTML = `<h3 class="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">${label} (${model})</h3><div class="whitespace-pre-wrap">${text}</div>`;
+            document.getElementById('outputArea').appendChild(div);
+        }
     </script>
 </body>
 </html>
