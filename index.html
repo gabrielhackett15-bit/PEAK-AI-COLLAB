@@ -3,73 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trinity Arena v1.0</title>
+    <title>Trinity Arena v1.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: #0f172a; color: #f8fafc; }
+        body { background: #0f172a; color: #f8fafc; font-family: sans-serif; }
         .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
-        .ai-card { border-left: 4px solid #3b82f6; }
-        .debate-card { border-left: 4px solid #ef4444; }
+        .output-card { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-4xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-blue-400">TRINITY ARENA</h1>
-            <p class="text-slate-400">Neural Proxy v12 Orchestrator</p>
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">TRINITY ARENA</h1>
+                <p class="text-xs text-slate-500 uppercase tracking-widest">Neural Proxy v12</p>
+            </div>
+            <button onclick="toggleConfig()" class="p-2 glass rounded-lg hover:bg-slate-700 transition">⚙️ Config</button>
         </header>
 
-        <div class="glass p-6 rounded-2xl mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block mb-2 font-bold">Select Models</label>
-                <select id="model1" class="w-full p-2 rounded bg-slate-800 border border-slate-700 mb-2">
-                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Logic)</option>
-                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3 (Efficiency)</option>
-                    <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron 70B (Prose)</option>
+        <div id="configPanel" class="hidden glass p-6 rounded-2xl mb-6 border-blue-500/30 border">
+            <h2 class="text-xl font-bold mb-4">Connection Settings</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-slate-400">Worker Base URL</label>
+                    <input id="workerUrl" type="text" placeholder="https://your-worker.workers.dev" class="w-full p-2 rounded bg-slate-900 border border-slate-700">
+                </div>
+                <div>
+                    <label class="block text-sm text-slate-400">Access Key (Optional)</label>
+                    <input id="workerKey" type="password" placeholder="sk-..." class="w-full p-2 rounded bg-slate-900 border border-slate-700">
+                </div>
+                <button onclick="syncModels()" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded font-bold text-sm">Sync Models from Worker</button>
+            </div>
+        </div>
+
+        <div class="glass p-6 rounded-2xl mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <label class="block font-bold text-blue-300">Model Selection</label>
+                <select id="model1" class="model-select w-full p-3 rounded bg-slate-800 border border-slate-700">
+                    <option value="llama-4-maverick">Llama 4 Maverick (Registry)</option>
+                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3</option>
+                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B</option>
                 </select>
-                <select id="model2" class="w-full p-2 rounded bg-slate-800 border border-slate-700">
-                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3 (Efficiency)</option>
-                    <option value="meta-llama/llama-3.3-70b-instruct">Llama 3.3 70B (Logic)</option>
+                <select id="model2" class="model-select w-full p-3 rounded bg-slate-800 border border-slate-700">
                     <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                    <option value="deepseek-ai/deepseek-v3">DeepSeek V3</option>
+                    <option value="llama-4-scout">Llama 4 Scout (Registry)</option>
                 </select>
             </div>
-            <div>
-                <label class="block mb-2 font-bold">Execution Mode</label>
-                <div class="flex gap-2">
-                    <button onclick="setMode('help')" id="btn-help" class="flex-1 p-2 rounded bg-blue-600 font-bold">Helping</button>
-                    <button onclick="setMode('debate')" id="btn-debate" class="flex-1 p-2 rounded bg-slate-700 font-bold">Debate</button>
+            <div class="space-y-4">
+                <label class="block font-bold text-blue-300">Execution Mode</label>
+                <div class="flex h-12 bg-slate-800 rounded-xl p-1">
+                    <button onclick="setMode('help')" id="btn-help" class="flex-1 rounded-lg font-bold transition">Helping</button>
+                    <button onclick="setMode('debate')" id="btn-debate" class="flex-1 rounded-lg font-bold transition">Debate</button>
                 </div>
             </div>
         </div>
 
         <div class="glass p-4 rounded-2xl mb-6">
-            <textarea id="userInput" placeholder="Enter your prompt or debate topic..." class="w-full h-32 p-4 bg-transparent border-none focus:ring-0 text-lg resize-none"></textarea>
-            <button onclick="runArena()" class="w-full mt-4 bg-blue-500 hover:bg-blue-400 p-3 rounded-xl font-bold transition">INITIATE SEQUENCE</button>
+            <textarea id="userInput" placeholder="Ask for code help or start an AI Mafia debate..." class="w-full h-32 p-4 bg-transparent border-none focus:ring-0 text-lg resize-none"></textarea>
+            <button onclick="runArena()" class="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 p-4 rounded-xl font-black text-lg shadow-lg transition-all">START OPERATION</button>
         </div>
 
-        <div id="outputArea" class="space-y-4"></div>
+        <div id="outputArea" class="space-y-6 pb-20"></div>
     </div>
 
     <script>
         let currentMode = 'help';
-        const workerUrl = "https://your-worker.workers.dev/v1/chat/completions"; // UPDATE THIS
+        
+        // Load settings from storage
+        document.getElementById('workerUrl').value = localStorage.getItem('trinity_url') || '';
+        document.getElementById('workerKey').value = localStorage.getItem('trinity_key') || '';
+        setMode('help');
+
+        function toggleConfig() { document.getElementById('configPanel').classList.toggle('hidden'); }
 
         function setMode(mode) {
             currentMode = mode;
-            document.getElementById('btn-help').className = mode === 'help' ? 'flex-1 p-2 rounded bg-blue-600 font-bold' : 'flex-1 p-2 rounded bg-slate-700 font-bold';
-            document.getElementById('btn-debate').className = mode === 'debate' ? 'flex-1 p-2 rounded bg-red-600 font-bold' : 'flex-1 p-2 rounded bg-slate-700 font-bold';
+            const isHelp = mode === 'help';
+            document.getElementById('btn-help').className = isHelp ? 'flex-1 rounded-lg bg-blue-600 text-white shadow-md' : 'flex-1 text-slate-400';
+            document.getElementById('btn-debate').className = !isHelp ? 'flex-1 rounded-lg bg-red-600 text-white shadow-md' : 'flex-1 text-slate-400';
+        }
+
+        async function syncModels() {
+            const baseUrl = document.getElementById('workerUrl').value;
+            try {
+                const res = await fetch(`${baseUrl}/v1/models`);
+                const data = await res.json();
+                const selects = document.querySelectorAll('.model-select');
+                selects.forEach(s => {
+                    s.innerHTML = data.data.map(m => `<option value="${m.id}">${m.id}</option>`).join('');
+                });
+                alert('Models Synced Successfully!');
+            } catch (e) {
+                alert('Failed to sync. Ensure your Worker has a GET /v1/models route.');
+            }
         }
 
         async function askAI(model, prompt, system = "") {
-            const res = await fetch(workerUrl, {
+            const url = document.getElementById('workerUrl').value + "/v1/chat/completions";
+            const key = document.getElementById('workerKey').value;
+            
+            // Save to local storage for convenience
+            localStorage.setItem('trinity_url', document.getElementById('workerUrl').value);
+            localStorage.setItem('trinity_key', key);
+
+            const res = await fetch(url, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer YOUR_KEY" },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` },
                 body: JSON.stringify({
                     model: model,
-                    messages: [
-                        { role: "system", content: system },
-                        { role: "user", content: prompt }
-                    ]
+                    messages: [{ role: "system", content: system }, { role: "user", content: prompt }]
                 })
             });
             const data = await res.json();
@@ -81,30 +125,35 @@
             const m1 = document.getElementById('model1').value;
             const m2 = document.getElementById('model2').value;
             const output = document.getElementById('outputArea');
-            output.innerHTML = "<p class='text-center animate-pulse'>Computing Neural Pathways...</p>";
+            output.innerHTML = "<div class='text-center py-10'><div class='animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mx-auto mb-4'></div><p class='text-blue-400 font-mono'>ROUTING THROUGH TRINITY...</p></div>";
 
-            if (currentMode === 'help') {
-                const ans1 = await askAI(m1, input, "Provide a high-quality initial draft or solution.");
-                renderCard(m1, ans1, "Initial Solution");
-                
-                const ans2 = await askAI(m2, `Review this solution and improve it: ${ans1}`, "You are an expert editor. Enhance the provided code/text.");
-                renderCard(m2, ans2, "Collaborative Enhancement", "bg-green-900/20");
-            } else {
-                const ans1 = await askAI(m1, input, "Argue IN FAVOR of this topic or take a PRO-stance.");
-                renderCard(m1, ans1, "Argument: PRO", "bg-blue-900/20");
+            try {
+                if (currentMode === 'help') {
+                    const ans1 = await askAI(m1, input, "Provide a high-quality initial solution.");
+                    renderCard(m1, ans1, "Initial Draft", "border-blue-500/50");
+                    
+                    const ans2 = await askAI(m2, `Improve this: ${ans1}`, "Expert Reviewer. Optimize and fix any errors in the previous output.");
+                    renderCard(m2, ans2, "Final Polished Version", "border-green-500/50 bg-green-950/10");
+                } else {
+                    const ans1 = await askAI(m1, input, "Take a strong PRO stance on this topic.");
+                    renderCard(m1, ans1, "Argue: Pro", "border-blue-500/50");
 
-                const ans2 = await askAI(m2, input, "Argue AGAINST this topic or take a CON-stance.");
-                renderCard(m2, ans2, "Argument: CON", "bg-red-900/20");
+                    const ans2 = await askAI(m2, input, "Take a strong CON stance on this topic.");
+                    renderCard(m2, ans2, "Argue: Con", "border-red-500/50");
 
-                const judge = await askAI("meta-llama/llama-3.3-70b-instruct", `Debate Transcript:\nPro: ${ans1}\nCon: ${ans2}`, "You are a neutral Mafia judge. Decide who had the better logic.");
-                renderCard("JUDGE (Llama 70B)", judge, "Verdict", "bg-purple-900/40");
+                    const judge = await askAI(m1, `Judge this debate:\n1: ${ans1}\n2: ${ans2}`, "Neutral Judge. Pick a winner based on logic.");
+                    renderCard("JUDGE", judge, "Verdict", "border-purple-500/50 bg-purple-950/20");
+                }
+            } catch (err) {
+                output.innerHTML = `<div class='p-4 bg-red-900/20 border border-red-500 rounded-xl'>Error: ${err.message}. Check your URL/Key in Config.</div>`;
             }
         }
 
-        function renderCard(model, text, label, color = "bg-slate-800") {
+        function renderCard(model, text, label, style) {
+            if(document.querySelector('.animate-spin')) document.getElementById('outputArea').innerHTML = '';
             const div = document.createElement('div');
-            div.className = `p-4 rounded-xl ${color} border border-white/10 shadow-xl`;
-            div.innerHTML = `<h3 class="text-xs font-black uppercase tracking-widest text-blue-400 mb-2">${label} (${model})</h3><div class="whitespace-pre-wrap">${text}</div>`;
+            div.className = `output-card glass p-6 rounded-2xl border-l-4 ${style}`;
+            div.innerHTML = `<h3 class="text-xs font-black uppercase text-slate-500 mb-3 tracking-tighter">${label} — ${model}</h3><div class="prose prose-invert max-w-none text-slate-200">${text}</div>`;
             document.getElementById('outputArea').appendChild(div);
         }
     </script>
